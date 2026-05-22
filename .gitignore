@@ -42,3 +42,6 @@ next-env.d.ts
 
 # skill registry cache
 .atl/
+
+# Stitch AI design artifacts
+stitch_uber_expense_dashboard/
