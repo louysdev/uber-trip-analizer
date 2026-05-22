@@ -290,7 +290,7 @@ app.post('/api/trips', async (req, res) => {
           id: trip.uuid || activity.uuid || `trip_${idx}`,
           date: beginDate || subtitleDate,
           dateLabel: activity.subtitle || '',
-          product_type: receipt.vehicleType || 'Unknown',
+          product_type: mapVehicleType(receipt.vehicleType),
           fare: extractFare(fareStr),
           currency: extractCurrency(fareStr),
           fareLabel: fareStr,
@@ -330,6 +330,12 @@ app.post('/api/trips', async (req, res) => {
     res.status(500).json({ error: 'Error al buscar viajes', detail: err.message });
   }
 });
+
+function mapVehicleType(type) {
+  if (!type || type === 'Unknown') return 'Cancelado';
+  if (type === 'Wait & Save') return 'Uber Espera';
+  return type;
+}
 
 function summarizeTrips(trips) {
   const byType = {};

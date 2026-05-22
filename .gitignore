@@ -40,3 +40,5 @@ yarn-error.log*
 
 # Stitch AI design artifacts
 stitch_uber_expense_dashboard/
+
+pnpm-lock.yaml

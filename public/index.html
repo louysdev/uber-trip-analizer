@@ -7,6 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
   :root {
+    /* dark mode (default) */
     --bg: #0f0f0f;
     --surface: #1a1a1a;
     --surface2: #242424;
@@ -18,6 +19,20 @@
     --green: #2ecc71;
     --orange: #f39c12;
     --red: #e74c3c;
+    --chart-grid: rgba(255,255,255,.05);
+    --chart-text: #999;
+    --hover: rgba(255,255,255,.02);
+  }
+  .light {
+    --bg: #f5f5f5;
+    --surface: #ffffff;
+    --surface2: #e8e8e8;
+    --border: #ddd;
+    --text: #1a1a1a;
+    --text2: #777;
+    --chart-grid: rgba(0,0,0,.08);
+    --chart-text: #666;
+    --hover: rgba(0,0,0,.03);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -38,6 +53,21 @@
   }
   .header h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
   .header .sub { font-size: 13px; color: var(--text2); font-weight: 400; margin-left: 4px; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .theme-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text2);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all .2s;
+  }
+  .theme-btn:hover { background: var(--border); color: var(--text); }
   .container { max-width: 1200px; margin: 0 auto; padding: 20px 24px; }
 
   /* Search bar */
@@ -209,7 +239,7 @@
   }
   .breakdown td { padding: 10px 16px; font-size: 14px; border-bottom: 1px solid var(--border); }
   .breakdown tr:last-child td { border-bottom: none; }
-  .breakdown tr:hover td { background: rgba(255,255,255,.02); }
+  .breakdown tr:hover td { background: var(--hover); }
   .color-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
 
   /* Detail table */
@@ -244,7 +274,7 @@
     z-index: 1;
   }
   .detail-table-wrap td { padding: 8px 12px; font-size: 13px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  .detail-table-wrap tr:hover td { background: rgba(255,255,255,.02); }
+  .detail-table-wrap tr:hover td { background: var(--hover); }
 
   .export-bar { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
   .export-btn {
@@ -261,8 +291,8 @@
   .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
   .badge-moto { background: rgba(243,156,18,.15); color: #f39c12; }
   .badge-uberx { background: rgba(39,110,241,.15); color: #4a8bf5; }
-  .badge-wait { background: rgba(46,204,113,.15); color: #2ecc71; }
-  .badge-unknown { background: rgba(255,255,255,.08); color: var(--text2); }
+  .badge-uber-espera { background: rgba(46,204,113,.15); color: #2ecc71; }
+  .badge-cancelado { background: rgba(231,76,60,.15); color: #e74c3c; }
   .badge-default { background: rgba(255,255,255,.08); color: var(--text2); }
 
   .hidden { display: none !important; }
@@ -279,6 +309,12 @@
     Uber Trip Analyzer
     <span class="sub">Extraé y analizá tus viajes</span>
   </h1>
+  <div class="header-right">
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">
+      <span id="themeIcon">☀️</span>
+      <span id="themeLabel">Claro</span>
+    </button>
+  </div>
 </div>
 
 <div class="container">
@@ -560,13 +596,16 @@ function renderCharts() {
 
   const ctx1 = document.getElementById('chartType').getContext('2d');
   if (chartTypeInstance) chartTypeInstance.destroy();
+  const style = getComputedStyle(document.documentElement);
+  const gridColor = style.getPropertyValue('--chart-grid').trim();
+  const textColor = style.getPropertyValue('--chart-text').trim();
   chartTypeInstance = new Chart(ctx1, {
     type: 'bar',
     data: { labels, datasets: [{ data: counts, backgroundColor: colors, borderRadius: 4 }] },
     options: {
       responsive: true,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw + ' viajes' } } },
-      scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color:'#999' }, grid: { color:'rgba(255,255,255,.05)' } }, x: { ticks: { color:'#999', maxRotation:45 } } }
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: textColor }, grid: { color: gridColor } }, x: { ticks: { color: textColor, maxRotation:45 } } }
     }
   });
 
@@ -578,7 +617,7 @@ function renderCharts() {
     options: {
       responsive: true,
       plugins: {
-        legend: { position:'right', labels: { color:'#999', padding:12, usePointStyle:true, pointStyle:'circle' } },
+        legend: { position:'right', labels: { color: textColor, padding:12, usePointStyle:true, pointStyle:'circle' } },
         tooltip: { callbacks: { label: ctx => ctx.label + ': ' + fmtCurrency(ctx.raw) } }
       }
     }
@@ -691,8 +730,47 @@ function hideError() {
   document.getElementById('errorBox').classList.remove('show');
 }
 
+// ---- Theme toggle ----
+function toggleTheme() {
+  const html = document.documentElement;
+  const isLight = html.classList.toggle('light');
+  const icon = document.getElementById('themeIcon');
+  const label = document.getElementById('themeLabel');
+  icon.textContent = isLight ? '🌙' : '☀️';
+  label.textContent = isLight ? 'Oscuro' : 'Claro';
+  localStorage.setItem('uber-theme', isLight ? 'light' : 'dark');
+  updateChartTheme();
+}
+
+function updateChartTheme() {
+  const style = getComputedStyle(document.documentElement);
+  const gridColor = style.getPropertyValue('--chart-grid').trim();
+  const textColor = style.getPropertyValue('--chart-text').trim();
+
+  if (chartTypeInstance) {
+    chartTypeInstance.options.scales.y.grid.color = gridColor;
+    chartTypeInstance.options.scales.x.ticks.color = textColor;
+    chartTypeInstance.options.scales.y.ticks.color = textColor;
+    chartTypeInstance.update();
+  }
+  if (chartCostInstance) {
+    chartCostInstance.options.plugins.legend.labels.color = textColor;
+    chartCostInstance.update();
+  }
+}
+
+function loadTheme() {
+  const saved = localStorage.getItem('uber-theme');
+  if (saved === 'light') {
+    document.documentElement.classList.add('light');
+    document.getElementById('themeIcon').textContent = '🌙';
+    document.getElementById('themeLabel').textContent = 'Oscuro';
+  }
+}
+
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', () => {
+  loadTheme();
   // Default dates: last 30 days
   const to = new Date();
   const from = new Date(to);
