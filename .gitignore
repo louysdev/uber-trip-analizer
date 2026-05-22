@@ -13,12 +13,10 @@
 # testing
 /coverage
 
-# next.js
-/.next/
-/out/
+# server logs
+*.log
 
 # production
-/build
 
 # misc
 .DS_Store
@@ -36,9 +34,6 @@ yarn-error.log*
 # vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
 
 # skill registry cache
 .atl/
