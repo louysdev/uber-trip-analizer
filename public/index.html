@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uber Trip Analyzer</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: #333;
+    --text: #e0e0e0;
+    --text2: #999;
+    --accent: #276ef1;
+    --accent2: #4a8bf5;
+    --green: #2ecc71;
+    --orange: #f39c12;
+    --red: #e74c3c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .header h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .header .sub { font-size: 13px; color: var(--text2); font-weight: 400; margin-left: 4px; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px 24px; }
+
+  /* Search bar */
+  .search-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .search-bar .field { display: flex; flex-direction: column; gap: 4px; }
+  .search-bar label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+  .search-bar input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 14px;
+    min-width: 180px;
+  }
+  .search-bar input:focus { outline: none; border-color: var(--accent); }
+  .search-bar .btn-search {
+    padding: 10px 28px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .search-bar .btn-search:hover { background: var(--accent2); }
+  .search-bar .btn-search:disabled { opacity: .5; cursor: not-allowed; }
+  .search-bar .status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: auto;
+  }
+  .status-badge.ok { background: rgba(46,204,113,.15); color: var(--green); }
+  .status-badge.err { background: rgba(231,76,60,.15); color: var(--red); }
+  .status-badge.wait { background: rgba(243,156,18,.15); color: var(--orange); }
+
+  /* Error */
+  .error-box {
+    background: rgba(231,76,60,.1);
+    border: 1px solid rgba(231,76,60,.3);
+    border-radius: 8px;
+    padding: 16px 20px;
+    color: var(--red);
+    margin-bottom: 16px;
+    font-size: 14px;
+    display: none;
+  }
+  .error-box.show { display: block; }
+
+  /* Loading */
+  .loading {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text2);
+    display: none;
+  }
+  .loading.show { display: block; }
+  .loading .spinner {
+    display: inline-block;
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+  .stat-card .label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+  .stat-card .value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+  .stat-card .value.green { color: var(--green); }
+  .stat-card .value.blue { color: var(--accent); }
+  .stat-card .value.orange { color: var(--orange); }
+
+  /* Filters bar */
+  .filters {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .filters label { font-size: 12px; color: var(--text2); text-transform: uppercase; }
+  .filters select, .filters input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-size: 13px;
+  }
+  .filters button {
+    padding: 7px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text2);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .filters button:hover { background: var(--border); color: var(--text); }
+
+  /* Charts */
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 768px) { .charts { grid-template-columns: 1fr; } }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .chart-card h3 { font-size: 14px; color: var(--text2); margin-bottom: 12px; }
+  .chart-card canvas { max-height: 320px; }
+
+  /* Breakdown table */
+  .breakdown {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .breakdown-header {
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .breakdown-header .count { color: var(--text2); font-weight: 400; font-size: 13px; }
+  .breakdown table { width: 100%; border-collapse: collapse; }
+  .breakdown th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+  .breakdown td { padding: 10px 16px; font-size: 14px; border-bottom: 1px solid var(--border); }
+  .breakdown tr:last-child td { border-bottom: none; }
+  .breakdown tr:hover td { background: rgba(255,255,255,.02); }
+  .color-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+
+  /* Detail table */
+  .detail-section { margin-bottom: 20px; }
+  .detail-section .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .detail-section .header h3 { font-size: 14px; color: var(--text2); }
+  .detail-table-wrap {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+  }
+  .detail-table-wrap table { width: 100%; border-collapse: collapse; }
+  .detail-table-wrap th {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    z-index: 1;
+  }
+  .detail-table-wrap td { padding: 8px 12px; font-size: 13px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .detail-table-wrap tr:hover td { background: rgba(255,255,255,.02); }
+
+  .export-bar { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+  .export-btn {
+    padding: 6px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text2);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .export-btn:hover { background: var(--border); color: var(--text); }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge-moto { background: rgba(243,156,18,.15); color: #f39c12; }
+  .badge-uberx { background: rgba(39,110,241,.15); color: #4a8bf5; }
+  .badge-wait { background: rgba(46,204,113,.15); color: #2ecc71; }
+  .badge-unknown { background: rgba(255,255,255,.08); color: var(--text2); }
+  .badge-default { background: rgba(255,255,255,.08); color: var(--text2); }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 6v6l4 2"/>
+    </svg>
+    Uber Trip Analyzer
+    <span class="sub">Extraé y analizá tus viajes</span>
+  </h1>
+</div>
+
+<div class="container">
+  <!-- Search bar -->
+  <div class="search-bar" id="searchBar">
+    <div class="field">
+      <label>Desde</label>
+      <input type="date" id="searchFrom">
+    </div>
+    <div class="field">
+      <label>Hasta</label>
+      <input type="date" id="searchTo">
+    </div>
+    <button class="btn-search" id="btnSearch" onclick="searchTrips()">Buscar viajes</button>
+    <div id="statusBadge"></div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Conectando a Brave y extrayendo viajes...</p>
+    <p style="font-size:12px;margin-top:4px;color:var(--border)">Esto puede tomar unos segundos</p>
+  </div>
+
+  <!-- Status / connection check -->
+  <div class="search-bar" id="statusBar" style="padding:12px 20px;display:none">
+    <span id="statusText" style="font-size:13px"></span>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" class="hidden">
+    <div class="stats" id="statsRow"></div>
+
+    <div class="filters" id="clientFilters">
+      <label>Filtrar por tipo:</label>
+      <select id="filterType">
+        <option value="all">Todos</option>
+      </select>
+      <label>Desde:</label>
+      <input type="date" id="filterFrom">
+      <label>Hasta:</label>
+      <input type="date" id="filterTo">
+      <button onclick="applyClientFilters()">Aplicar</button>
+      <button onclick="resetClientFilters()">Limpiar</button>
+    </div>
+
+    <div class="charts">
+      <div class="chart-card">
+        <h3>Viajes por tipo</h3>
+        <canvas id="chartType"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Gasto por tipo</h3>
+        <canvas id="chartCost"></canvas>
+      </div>
+    </div>
+
+    <div class="breakdown" id="breakdownTable"></div>
+
+    <div class="detail-section">
+      <div class="header">
+        <h3>Todos los viajes</h3>
+        <span id="detailCount">0 viajes</span>
+      </div>
+      <div class="detail-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Tarifa</th>
+              <th>Distancia</th>
+              <th>Duración</th>
+              <th>Origen</th>
+              <th>Destino</th>
+            </tr>
+          </thead>
+          <tbody id="detailBody"></tbody>
+        </table>
+      </div>
+      <div class="export-bar">
+        <button class="export-btn" onclick="exportCSV()">Exportar CSV</button>
+        <button class="export-btn" onclick="exportJSON()">Exportar JSON</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- State ----
+let allTrips = [];
+let filteredTrips = [];
+let chartTypeInstance = null;
+let chartCostInstance = null;
+const TYPE_COLORS = {};
+
+function getColor(type) {
+  if (TYPE_COLORS[type]) return TYPE_COLORS[type];
+  const colors = ['#276ef1','#2ecc71','#f39c12','#9b59b6','#e74c3c','#1abc9c','#e67e22','#3498db','#f1c40f','#d35400','#8e44ad'];
+  const idx = Object.keys(TYPE_COLORS).length % colors.length;
+  TYPE_COLORS[type] = colors[idx];
+  return colors[idx];
+}
+
+function fmtDate(d) {
+  if (!d) return '-';
+  const dt = new Date(d);
+  return isNaN(dt.getTime()) ? d : dt.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+function fmtCurrency(n) {
+  const num = parseFloat(n) || 0;
+  return num.toLocaleString('es-DO', { style:'currency', currency:'DOP', minimumFractionDigits:2 });
+}
+
+function fmtDuration(dur) {
+  if (!dur) return '-';
+  const m = dur.match(/(\d+)\s*(min|minutes)/i);
+  if (m) return m[1] + 'min';
+  return dur;
+}
+
+// ---- Connection check ----
+async function checkStatus() {
+  const badge = document.getElementById('statusBadge');
+  badge.innerHTML = '<span class="status-badge wait">Verificando conexión...</span>';
+  try {
+    const resp = await fetch('/api/status');
+    const data = await resp.json();
+    if (data.status === 'ok') {
+      badge.innerHTML = '<span class="status-badge ok">Conectado a Brave</span>';
+      document.getElementById('btnSearch').disabled = false;
+    } else {
+      badge.innerHTML = `<span class="status-badge err">${data.message}</span>`;
+    }
+  } catch {
+    badge.innerHTML = '<span class="status-badge err">Servidor no disponible</span>';
+  }
+}
+
+// ---- Search ----
+async function searchTrips() {
+  const from = document.getElementById('searchFrom').value;
+  const to = document.getElementById('searchTo').value;
+
+  if (!from || !to) {
+    showError('Seleccioná una fecha de inicio y fin');
+    return;
+  }
+
+  if (new Date(from) > new Date(to)) {
+    showError('La fecha "Desde" no puede ser mayor que "Hasta"');
+    return;
+  }
+
+  hideError();
+  document.getElementById('dashboard').classList.add('hidden');
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('btnSearch').disabled = true;
+
+  try {
+    const resp = await fetch('/api/trips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to }),
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      showError(data.error || 'Error del servidor');
+      return;
+    }
+
+    allTrips = data.trips || [];
+    document.getElementById('loading').classList.remove('show');
+
+    if (allTrips.length === 0) {
+      showError('No se encontraron viajes en ese rango de fechas');
+      return;
+    }
+
+    initDashboard(from, to);
+  } catch (err) {
+    document.getElementById('loading').classList.remove('show');
+    showError('Error de conexión: ' + err.message);
+  } finally {
+    document.getElementById('btnSearch').disabled = false;
+  }
+}
+
+// ---- Dashboard init ----
+function initDashboard(from, to) {
+  document.getElementById('dashboard').classList.remove('hidden');
+
+  // Set client filters
+  document.getElementById('filterFrom').value = from;
+  document.getElementById('filterTo').value = to;
+
+  const types = [...new Set(allTrips.map(t => t.product_type || '(sin tipo)'))].sort();
+  const sel = document.getElementById('filterType');
+  sel.innerHTML = '<option value="all">Todos</option>' + types.map(t => `<option value="${t}">${t}</option>`).join('');
+
+  applyClientFilters();
+}
+
+// ---- Client-side filters ----
+function applyClientFilters() {
+  const from = document.getElementById('filterFrom').value;
+  const to = document.getElementById('filterTo').value;
+  const typeFilter = document.getElementById('filterType').value;
+
+  filteredTrips = allTrips.filter(t => {
+    if (typeFilter !== 'all' && t.product_type !== typeFilter) return false;
+    if (from && t.date) {
+      const d = new Date(t.date);
+      if (!isNaN(d.getTime()) && d < new Date(from + 'T00:00:00')) return false;
+    }
+    if (to && t.date) {
+      const d = new Date(t.date);
+      if (!isNaN(d.getTime()) && d > new Date(to + 'T23:59:59')) return false;
+    }
+    return true;
+  });
+
+  render();
+}
+
+function resetClientFilters() {
+  document.getElementById('filterFrom').value = document.getElementById('searchFrom').value;
+  document.getElementById('filterTo').value = document.getElementById('searchTo').value;
+  document.getElementById('filterType').value = 'all';
+  applyClientFilters();
+}
+
+// ---- Render ----
+function render() {
+  renderStats();
+  renderCharts();
+  renderBreakdown();
+  renderDetail();
+}
+
+function renderStats() {
+  const total = filteredTrips.length;
+  const fares = filteredTrips.map(t => t.fare || 0);
+  const totalFare = fares.reduce((a, b) => a + b, 0);
+  const dists = filteredTrips.map(t => t.distance || 0);
+  const totalDist = dists.reduce((a, b) => a + b, 0);
+  const types = new Set(filteredTrips.map(t => t.product_type || '(sin tipo)')).size;
+  const dates = filteredTrips.filter(t => t.date).map(t => new Date(t.date)).filter(d => !isNaN(d.getTime()));
+  const range = dates.length ? `${fmtDate(Math.min(...dates))} — ${fmtDate(Math.max(...dates))}` : '-';
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="label">Viajes</div><div class="value blue">${total}</div></div>
+    <div class="stat-card"><div class="label">Gasto total</div><div class="value green">${fmtCurrency(totalFare)}</div></div>
+    <div class="stat-card"><div class="label">Distancia total</div><div class="value orange">${totalDist.toFixed(1)} km</div></div>
+    <div class="stat-card"><div class="label">Tipos de viaje</div><div class="value">${types}</div></div>
+    <div class="stat-card"><div class="label">Período</div><div class="value" style="font-size:14px;font-weight:400">${range}</div></div>
+  `;
+}
+
+function renderCharts() {
+  const groups = {};
+  filteredTrips.forEach(t => {
+    const type = t.product_type || '(sin tipo)';
+    if (!groups[type]) groups[type] = { count:0, totalFare:0 };
+    groups[type].count++;
+    groups[type].totalFare += t.fare || 0;
+  });
+
+  const labels = Object.keys(groups);
+  const counts = labels.map(l => groups[l].count);
+  const fares = labels.map(l => groups[l].totalFare);
+  const colors = labels.map(l => getColor(l));
+
+  const ctx1 = document.getElementById('chartType').getContext('2d');
+  if (chartTypeInstance) chartTypeInstance.destroy();
+  chartTypeInstance = new Chart(ctx1, {
+    type: 'bar',
+    data: { labels, datasets: [{ data: counts, backgroundColor: colors, borderRadius: 4 }] },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw + ' viajes' } } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color:'#999' }, grid: { color:'rgba(255,255,255,.05)' } }, x: { ticks: { color:'#999', maxRotation:45 } } }
+    }
+  });
+
+  const ctx2 = document.getElementById('chartCost').getContext('2d');
+  if (chartCostInstance) chartCostInstance.destroy();
+  chartCostInstance = new Chart(ctx2, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: fares, backgroundColor: colors, borderWidth: 0 }] },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position:'right', labels: { color:'#999', padding:12, usePointStyle:true, pointStyle:'circle' } },
+        tooltip: { callbacks: { label: ctx => ctx.label + ': ' + fmtCurrency(ctx.raw) } }
+      }
+    }
+  });
+}
+
+function renderBreakdown() {
+  const groups = {};
+  filteredTrips.forEach(t => {
+    const type = t.product_type || '(sin tipo)';
+    if (!groups[type]) groups[type] = { count:0, totalFare:0, distances:[], durations:[] };
+    groups[type].count++;
+    groups[type].totalFare += t.fare || 0;
+    if (t.distance) groups[type].distances.push(t.distance);
+    if (t.duration) groups[type].durations.push(t.duration);
+  });
+
+  const rows = Object.entries(groups).sort((a, b) => b[1].count - a[1].count);
+  const totalFareAll = filteredTrips.reduce((s, t) => s + (t.fare || 0), 0);
+
+  document.getElementById('breakdownTable').innerHTML = `
+    <div class="breakdown-header">
+      <span>Desglose por tipo</span>
+      <span class="count">${filteredTrips.length} viajes · ${fmtCurrency(totalFareAll)}</span>
+    </div>
+    <table>
+      <thead><tr>
+        <th>Tipo</th><th>Viajes</th><th>%</th><th>Total</th><th>Promedio</th><th>Distancia total</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(([type, g]) => {
+          const pct = ((g.count / filteredTrips.length) * 100).toFixed(1);
+          const avgFare = g.totalFare / g.count;
+          const totalDist = g.distances.reduce((s, d) => s + d, 0);
+          return `<tr>
+            <td><span class="color-dot" style="background:${getColor(type)}"></span>${type}</td>
+            <td><strong>${g.count}</strong></td>
+            <td>${pct}%</td>
+            <td>${fmtCurrency(g.totalFare)}</td>
+            <td>${fmtCurrency(avgFare)}</td>
+            <td>${totalDist.toFixed(1)} km</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderDetail() {
+  const sorted = [...filteredTrips].sort((a, b) => {
+    const da = a.date ? new Date(a.date).getTime() : 0;
+    const db = b.date ? new Date(b.date).getTime() : 0;
+    return db - da;
+  });
+
+  const tbody = document.getElementById('detailBody');
+  tbody.innerHTML = sorted.map(t => {
+    const type = t.product_type || '-';
+    const badgeClass = 'badge-' + type.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return `<tr>
+      <td>${fmtDate(t.date)}</td>
+      <td><span class="badge ${badgeClass}">${type}</span></td>
+      <td>${fmtCurrency(t.fare)}</td>
+      <td>${t.distance ? t.distance.toFixed(1) + ' km' : '-'}</td>
+      <td>${fmtDuration(t.duration)}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">${t.pickup || '-'}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">${t.dropoff || '-'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('detailCount').textContent = `${sorted.length} viajes`;
+}
+
+// ---- Export ----
+function exportCSV() {
+  if (!filteredTrips.length) return;
+  const rows = filteredTrips.map(t => [
+    t.date || '', t.product_type || '', t.fare || 0, t.distance || 0, t.duration || '',
+    '"' + (t.pickup || '').replace(/"/g, '""') + '"',
+    '"' + (t.dropoff || '').replace(/"/g, '""') + '"',
+    t.status || '',
+  ]);
+  const csv = ['Fecha,Tipo,Tarifa,Distancia_km,Duración,Origen,Destino,Estado', ...rows.map(r => r.join(','))].join('\n');
+  download(csv, 'uber-viajes.csv', 'text/csv');
+}
+
+function exportJSON() {
+  if (!filteredTrips.length) return;
+  const clean = filteredTrips.map(t => ({
+    date: t.date, type: t.product_type, fare: t.fare, distance: t.distance,
+    duration: t.duration, pickup: t.pickup, dropoff: t.dropoff, status: t.status,
+  }));
+  download(JSON.stringify(clean, null, 2), 'uber-viajes.json', 'application/json');
+}
+
+function download(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+// ---- Error ----
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideError() {
+  document.getElementById('errorBox').classList.remove('show');
+}
+
+// ---- Init ----
+document.addEventListener('DOMContentLoaded', () => {
+  // Default dates: last 30 days
+  const to = new Date();
+  const from = new Date(to);
+  from.setDate(from.getDate() - 30);
+  document.getElementById('searchFrom').value = from.toISOString().split('T')[0];
+  document.getElementById('searchTo').value = to.toISOString().split('T')[0];
+  document.getElementById('btnSearch').disabled = true;
+
+  // Check connection on load
+  checkStatus();
+});
+</script>
+</body>
+</html>
