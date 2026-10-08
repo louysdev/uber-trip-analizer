@@ -295,6 +295,97 @@
   .badge-cancelado { background: rgba(231,76,60,.15); color: #e74c3c; }
   .badge-default { background: rgba(255,255,255,.08); color: var(--text2); }
 
+  /* Setup wizard */
+  .setup-wizard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .setup-wizard.hidden { display: none !important; }
+  .setup-header { margin-bottom: 20px; }
+  .setup-header h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .setup-header p { font-size: 13px; color: var(--text2); }
+  .setup-steps { display: flex; flex-direction: column; gap: 16px; }
+  .setup-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .setup-step.completed {
+    border-color: var(--green);
+    background: rgba(46,204,113,.05);
+  }
+  .step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .setup-step.completed .step-number {
+    background: var(--green);
+  }
+  .step-content { flex: 1; }
+  .step-content h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .step-content p { font-size: 12px; color: var(--text2); line-height: 1.5; margin-bottom: 10px; }
+  .step-content code {
+    background: var(--bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    color: var(--accent2);
+  }
+  .setup-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .2s;
+  }
+  .setup-btn:hover { background: var(--accent2); }
+  .step-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text2);
+    flex-shrink: 0;
+    min-width: 100px;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot.green { background: #2ecc71; }
+  .dot.orange { background: #f39c12; }
+  .dot.red { background: #e74c3c; }
+  @media (max-width: 600px) {
+    .setup-step { flex-direction: column; }
+    .step-status { margin-top: 8px; }
+  }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -330,6 +421,61 @@
     </div>
     <button class="btn-search" id="btnSearch" onclick="searchTrips()">Buscar viajes</button>
     <div id="statusBadge"></div>
+  </div>
+
+  <!-- Setup wizard -->
+  <div class="setup-wizard" id="setupWizard">
+    <div class="setup-header">
+      <h2>⚡ Configuración inicial</h2>
+      <p>Seguí estos pasos para empezar a analizar tus viajes</p>
+    </div>
+
+    <div class="setup-steps">
+      <div class="setup-step" id="step1">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h3>Instalá la extensión</h3>
+          <p>Descargá la extensión, descomprimí el ZIP, y cargala en <code>chrome://extensions</code> con el modo desarrollador activado.</p>
+          <a href="uber-trip-extractor.zip" download class="setup-btn" id="btnDownload">
+            ⬇️ Descargar extensión
+          </a>
+        </div>
+        <div class="step-status" id="step1Status">
+          <span class="dot orange"></span>
+          <span>Pendiente</span>
+        </div>
+      </div>
+
+      <div class="setup-step" id="step2">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h3>Iniciá sesión en Uber</h3>
+          <p>Abrí Uber Riders en otra pestaña e iniciá sesión con tu cuenta.</p>
+          <a href="https://riders.uber.com/trips" target="_blank" class="setup-btn">
+            🔗 Abrir Uber Riders
+          </a>
+        </div>
+        <div class="step-status" id="step2Status">
+          <span class="dot orange"></span>
+          <span>Pendiente</span>
+        </div>
+      </div>
+
+      <div class="setup-step" id="step3">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h3>Verificá la conexión</h3>
+          <p>Comprobá que la extensión detecta tu sesión de Uber.</p>
+          <button class="setup-btn" id="btnVerify" onclick="verifyConnection()">
+            🔍 Comprobar conexión
+          </button>
+        </div>
+        <div class="step-status" id="step3Status">
+          <span class="dot orange"></span>
+          <span>Pendiente</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Error -->
@@ -446,9 +592,9 @@ window.addEventListener('uber-extractor-response', (event) => {
 
 window.addEventListener('uber-extractor-ready', (event) => {
   extensionReady = true;
-  const badge = document.getElementById('statusBadge');
-  badge.innerHTML = '<span class="status-badge ok">Extensión conectada ✓</span>';
-  document.getElementById('btnSearch').disabled = false;
+  // Mark step 1 as completed
+  markStepCompleted(1);
+  // Don't enable search yet — user should verify connection first
 });
 
 function getColor(type) {
@@ -479,15 +625,62 @@ function fmtDuration(dur) {
 
 // ---- Connection check ----
 async function checkStatus() {
-  const badge = document.getElementById('statusBadge');
-  badge.innerHTML = '<span class="status-badge wait">Buscando extensión...</span>';
-
-  // Give the extension time to inject bridge.js
+  // If extension already detected via bridge, skip wizard check
+  if (extensionReady) {
+    return;
+  }
+  // Give bridge.js time to inject
   setTimeout(() => {
     if (!extensionReady) {
-      badge.innerHTML = '<span class="status-badge err">Extensión no detectada — <a href="https://github.com/louysdev/uber-trip-analizer#instalación" target="_blank" style="color:inherit;text-decoration:underline">instalá la extensión</a></span>';
+      // Extension not found — wizard stays visible, that's the guidance
     }
   }, 1500);
+}
+
+async function verifyConnection() {
+  const step3Status = document.getElementById('step3Status');
+  step3Status.innerHTML = '<span class="dot orange"></span><span>Verificando...</span>';
+
+  try {
+    const data = await sendToExtension('ping');
+    if (!data.ok) {
+      step3Status.innerHTML = '<span class="dot red"></span><span>Error de conexión</span>';
+      return;
+    }
+
+    // Check if Uber tab is open
+    const status = await sendToExtension('get-status');
+    if (status.uberTabOpen) {
+      markStepCompleted(2);
+      markStepCompleted(3);
+      // All steps done — show search bar, hide wizard
+      showReady();
+    } else {
+      // Extension works but no Uber tab
+      markStepCompleted(3); // extension works
+      step3Status.innerHTML = '<span class="dot orange"></span><span>Sin pestaña Uber</span>';
+      showError('Abrí riders.uber.com en otra pestaña e iniciá sesión primero.');
+    }
+  } catch (err) {
+    step3Status.innerHTML = '<span class="dot red"></span><span>Sin extensión</span>';
+    showError('No se pudo conectar con la extensión. Asegurate de haberla instalado.');
+  }
+}
+
+function markStepCompleted(stepNum) {
+  const step = document.getElementById('step' + stepNum);
+  const status = document.getElementById('step' + stepNum + 'Status');
+  if (step) step.classList.add('completed');
+  if (status) status.innerHTML = '<span class="dot green"></span><span>Listo ✓</span>';
+}
+
+function showReady() {
+  document.getElementById('setupWizard').classList.add('hidden');
+  document.getElementById('searchBar').classList.remove('hidden');
+  const badge = document.getElementById('statusBadge');
+  badge.innerHTML = '<span class="status-badge ok">Extensión conectada ✓</span>';
+  document.getElementById('btnSearch').disabled = false;
+  hideError();
 }
 
 // ---- Search ----
@@ -804,6 +997,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('searchFrom').value = from.toISOString().split('T')[0];
   document.getElementById('searchTo').value = to.toISOString().split('T')[0];
   document.getElementById('btnSearch').disabled = true;
+  document.getElementById('searchBar').classList.add('hidden');
 
   // Check connection on load
   checkStatus();
