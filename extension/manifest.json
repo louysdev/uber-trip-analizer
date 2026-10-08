@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Uber Trip Extractor",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "description": "Companion for Uber Trip Analyzer — extracts trip data from your authenticated Uber session.",
   "permissions": [],
   "host_permissions": [
     "https://riders.uber.com/*"
@@ -11,20 +12,22 @@
   },
   "content_scripts": [
     {
+      "matches": ["https://riders.uber.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
       "matches": [
-        "https://riders.uber.com/*"
+        "https://louysdev.github.io/*",
+        "http://localhost:*/*",
+        "http://127.0.0.1:*/*"
       ],
-      "js": [
-        "content.js"
-      ],
+      "js": ["bridge.js"],
       "run_at": "document_idle"
     }
   ],
-  "externally_connectable": {
-    "matches": [
-      "https://louysdev.github.io/*",
-      "http://localhost:*/*",
-      "http://127.0.0.1:*/*"
-    ]
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Uber Trip Extractor"
   }
 }

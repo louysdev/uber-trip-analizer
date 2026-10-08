@@ -407,14 +407,49 @@
 </div>
 
 <script>
-const EXTENSION_ID = 'YOUR_EXTENSION_ID_HERE';
-
 // ---- State ----
 let allTrips = [];
 let filteredTrips = [];
 let chartTypeInstance = null;
 let chartCostInstance = null;
 const TYPE_COLORS = {};
+
+let extensionReady = false;
+let requestCounter = 0;
+const pendingRequests = new Map();
+
+function sendToExtension(command, data = {}) {
+  return new Promise((resolve, reject) => {
+    const id = ++requestCounter;
+    const timeout = setTimeout(() => {
+      pendingRequests.delete(id);
+      reject(new Error('Timeout esperando respuesta de la extensión'));
+    }, 120000); // 2 min timeout for long extractions
+
+    pendingRequests.set(id, { resolve, reject, timeout });
+
+    window.dispatchEvent(new CustomEvent('uber-extractor-request', {
+      detail: { id, command, ...data }
+    }));
+  });
+}
+
+window.addEventListener('uber-extractor-response', (event) => {
+  const { id, ...data } = event.detail;
+  const pending = pendingRequests.get(id);
+  if (pending) {
+    clearTimeout(pending.timeout);
+    pendingRequests.delete(id);
+    pending.resolve(data);
+  }
+});
+
+window.addEventListener('uber-extractor-ready', (event) => {
+  extensionReady = true;
+  const badge = document.getElementById('statusBadge');
+  badge.innerHTML = '<span class="status-badge ok">Extensión conectada ✓</span>';
+  document.getElementById('btnSearch').disabled = false;
+});
 
 function getColor(type) {
   if (TYPE_COLORS[type]) return TYPE_COLORS[type];
@@ -446,26 +481,13 @@ function fmtDuration(dur) {
 async function checkStatus() {
   const badge = document.getElementById('statusBadge');
   badge.innerHTML = '<span class="status-badge wait">Buscando extensión...</span>';
-  if (!EXTENSION_ID || EXTENSION_ID === 'YOUR_EXTENSION_ID_HERE') {
-    badge.innerHTML = '<span class="status-badge err">⚠️ Configurá el EXTENSION_ID en el código</span>';
-    return;
-  }
-  try {
-    const response = await new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage(EXTENSION_ID, { command: 'ping' }, (resp) => {
-        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
-        else resolve(resp);
-      });
-    });
-    if (response && response.ok) {
-      badge.innerHTML = '<span class="status-badge ok">Extensión conectada ✓</span>';
-      document.getElementById('btnSearch').disabled = false;
-    } else {
-      badge.innerHTML = '<span class="status-badge err">Extensión no responde</span>';
+
+  // Give the extension time to inject bridge.js
+  setTimeout(() => {
+    if (!extensionReady) {
+      badge.innerHTML = '<span class="status-badge err">Extensión no detectada — <a href="https://github.com/louysdev/uber-trip-analizer#instalación" target="_blank" style="color:inherit;text-decoration:underline">instalá la extensión</a></span>';
     }
-  } catch {
-    badge.innerHTML = '<span class="status-badge err">Extensión no detectada — instalá la extensión</span>';
-  }
+  }, 1500);
 }
 
 // ---- Search ----
@@ -489,16 +511,13 @@ async function searchTrips() {
   document.getElementById('btnSearch').disabled = true;
 
   try {
-    const data = await new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage(EXTENSION_ID, { command: 'fetch-trips', from, to }, (response) => {
-        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
-        else resolve(response);
-      });
-    });
+    const data = await sendToExtension('fetch-trips', { from, to });
+
     if (data.error) {
       showError(data.message || data.error);
       return;
     }
+
     allTrips = data.trips || [];
     document.getElementById('loading').classList.remove('show');
 
