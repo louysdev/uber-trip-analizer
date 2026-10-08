@@ -44,4 +44,11 @@ stitch_uber_expense_dashboard/
 pnpm-lock.yaml
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+.playwright/
+
+# CodeGraph index (local cache)
+.codegraph/
+
+# ODD task documents (local development)
+odd/
 trips.json
