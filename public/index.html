@@ -338,7 +338,7 @@
   <!-- Loading -->
   <div class="loading" id="loading">
     <div class="spinner"></div>
-    <p>Conectando a Brave y extrayendo viajes...</p>
+    <p>Extrayendo viajes desde Uber...</p>
     <p style="font-size:12px;margin-top:4px;color:var(--border)">Esto puede tomar unos segundos</p>
   </div>
 
@@ -407,6 +407,8 @@
 </div>
 
 <script>
+const EXTENSION_ID = 'YOUR_EXTENSION_ID_HERE';
+
 // ---- State ----
 let allTrips = [];
 let filteredTrips = [];
@@ -443,18 +445,26 @@ function fmtDuration(dur) {
 // ---- Connection check ----
 async function checkStatus() {
   const badge = document.getElementById('statusBadge');
-  badge.innerHTML = '<span class="status-badge wait">Verificando conexión...</span>';
+  badge.innerHTML = '<span class="status-badge wait">Buscando extensión...</span>';
+  if (!EXTENSION_ID || EXTENSION_ID === 'YOUR_EXTENSION_ID_HERE') {
+    badge.innerHTML = '<span class="status-badge err">⚠️ Configurá el EXTENSION_ID en el código</span>';
+    return;
+  }
   try {
-    const resp = await fetch('/api/status');
-    const data = await resp.json();
-    if (data.status === 'ok') {
-      badge.innerHTML = '<span class="status-badge ok">Conectado a Brave</span>';
+    const response = await new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(EXTENSION_ID, { command: 'ping' }, (resp) => {
+        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+        else resolve(resp);
+      });
+    });
+    if (response && response.ok) {
+      badge.innerHTML = '<span class="status-badge ok">Extensión conectada ✓</span>';
       document.getElementById('btnSearch').disabled = false;
     } else {
-      badge.innerHTML = `<span class="status-badge err">${data.message}</span>`;
+      badge.innerHTML = '<span class="status-badge err">Extensión no responde</span>';
     }
   } catch {
-    badge.innerHTML = '<span class="status-badge err">Servidor no disponible</span>';
+    badge.innerHTML = '<span class="status-badge err">Extensión no detectada — instalá la extensión</span>';
   }
 }
 
@@ -479,19 +489,16 @@ async function searchTrips() {
   document.getElementById('btnSearch').disabled = true;
 
   try {
-    const resp = await fetch('/api/trips', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to }),
+    const data = await new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(EXTENSION_ID, { command: 'fetch-trips', from, to }, (response) => {
+        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+        else resolve(response);
+      });
     });
-
-    const data = await resp.json();
-
-    if (!resp.ok) {
-      showError(data.error || 'Error del servidor');
+    if (data.error) {
+      showError(data.message || data.error);
       return;
     }
-
     allTrips = data.trips || [];
     document.getElementById('loading').classList.remove('show');
 
