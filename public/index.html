@@ -147,10 +147,17 @@
       padding: 0;
     }
 
+    html {
+      overflow-x: hidden;
+      max-width: 100%;
+    }
+
     body {
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      overflow-x: hidden;
+      max-width: 100%;
       background-color: var(--bg);
       color: var(--fg);
       font-family: var(--font-body);
@@ -168,6 +175,7 @@
       max-width: var(--container-max);
       margin-inline: auto;
       padding-inline: var(--container-gutter-desktop);
+      width: 100%;
     }
 
     @media (max-width: 768px) {
@@ -318,6 +326,7 @@
       font-weight: 500;
       cursor: pointer;
       white-space: nowrap;
+      flex-shrink: 0;
       transition: all var(--motion-fast) var(--ease-standard);
     }
 
@@ -542,32 +551,6 @@
       text-overflow: ellipsis;
     }
 
-    @media (max-width: 860px) {
-      .metrics-bar {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-      }
-      .metrics-bar-item + .metrics-bar-item {
-        border-left: none;
-      }
-      .metrics-bar-item:nth-child(even) {
-        border-left: 1px solid var(--border-soft);
-      }
-      .metrics-bar-item:nth-child(n+3) {
-        border-top: 1px solid var(--border-soft);
-      }
-    }
-
-    @media (max-width: 520px) {
-      .metrics-bar {
-        grid-template-columns: 1fr;
-      }
-      .metrics-bar-item + .metrics-bar-item {
-        border-left: none;
-        border-top: 1px solid var(--border-soft);
-      }
-    }
-
     /* ─── Control Bar (Filters & Search) ──────────────────────────────── */
     .controls-panel {
       background: var(--surface-warm);
@@ -637,6 +620,7 @@
       border-radius: var(--radius-sm);
       padding: 10px 16px;
       flex: 1;
+      min-width: 0;
       transition: border-color var(--motion-fast);
     }
 
@@ -652,6 +636,7 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
       user-select: none;
+      flex-shrink: 0;
     }
 
     .date-field input[type="date"] {
@@ -663,6 +648,9 @@
       outline: none;
       cursor: pointer;
       width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .date-separator {
@@ -680,6 +668,13 @@
       gap: var(--space-3);
       padding-top: var(--space-3);
       border-top: 1px solid var(--border-soft);
+    }
+
+    .controls-bottom-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      flex-shrink: 0;
     }
 
     /* ─── Visual Insights: Charts & Budget ────────────────────────────── */
@@ -915,14 +910,23 @@
       color: var(--muted);
     }
 
+    .trips-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+
     .table-container {
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
       max-height: 580px;
       overflow-y: auto;
     }
 
     .trips-table {
       width: 100%;
+      min-width: 680px;
       border-collapse: collapse;
       text-align: left;
       font-size: var(--text-sm);
@@ -1359,6 +1363,44 @@
       to { transform: rotate(360deg); }
     }
 
+    /* Notice banner */
+    .notice-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-3);
+      padding: var(--space-4) var(--space-6);
+      background: var(--surface-warm);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-soft);
+      text-align: center;
+    }
+
+    .notice-text {
+      font-size: var(--text-sm);
+      color: var(--muted);
+      line-height: var(--leading-body);
+    }
+
+    /* Setup step card and code */
+    .setup-step {
+      background: var(--surface-warm);
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-soft);
+      transition: border-color var(--motion-fast);
+    }
+
+    .setup-step code {
+      background: var(--chip-bg);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      overflow-wrap: break-word;
+      word-break: break-all;
+    }
+
     /* Setup step status dot */
     .dot {
       width: 8px;
@@ -1379,27 +1421,295 @@
       display: none !important;
     }
 
-    @media (max-width: 640px) {
+    /* ─── Responsive Media Queries ────────────────────────────────────── */
+
+    /* Tablet & Medium Breakpoint (<=860px) */
+    @media (max-width: 860px) {
+      .metrics-bar {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .metrics-bar-item {
+        min-width: 0;
+        border-left: none !important;
+        border-top: none !important;
+        border-right: none !important;
+        border-bottom: none !important;
+      }
+      /* Clean 2x2 grid borders without double borders */
+      .metrics-bar-item:nth-child(1) {
+        border-right: 1px solid var(--border-soft) !important;
+        border-bottom: 1px solid var(--border-soft) !important;
+      }
+      .metrics-bar-item:nth-child(2) {
+        border-bottom: 1px solid var(--border-soft) !important;
+      }
+      .metrics-bar-item:nth-child(3) {
+        border-right: 1px solid var(--border-soft) !important;
+      }
+      .metrics-bar-item:nth-child(4) {
+        border: none !important;
+      }
+    }
+
+    /* Tablet Breakpoint (641px - 960px) */
+    @media (min-width: 641px) and (max-width: 960px) {
       .controls-row-top {
-        flex-direction: column;
-        align-items: stretch;
+        gap: var(--space-3);
       }
       .date-filter-group {
         width: 100%;
+        flex: 1 1 100%;
+        min-width: 100%;
+      }
+      .date-field {
+        flex: 1;
         min-width: 0;
       }
+      .search-input-wrap {
+        flex: 1;
+        min-width: 200px;
+        max-width: none;
+      }
+      #btnSearch {
+        flex-shrink: 0;
+      }
+    }
+
+    /* Mobile Breakpoint (<=640px) */
+    @media (max-width: 640px) {
+      .controls-panel {
+        padding: 16px 14px;
+        gap: var(--space-3);
+      }
+
+      .controls-row-top {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-3);
+      }
+
+      .date-filter-group {
+        min-width: 0;
+        width: 100%;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+
+      .date-separator {
+        display: none;
+      }
+
+      .date-field {
+        width: 100%;
+        min-width: 0;
+        padding: 10px 14px;
+        box-sizing: border-box;
+      }
+
+      .date-field input[type="date"] {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+
       .search-input-wrap {
         width: 100%;
         min-width: 0;
         max-width: none !important;
       }
+
+      #btnSearch {
+        width: 100%;
+        justify-content: center;
+        padding: 12px;
+      }
+
+      .pill-group {
+        display: flex;
+        gap: var(--space-2);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 4px;
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .pill-group::-webkit-scrollbar {
+        display: none;
+      }
+
+      .chip-btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+
       .controls-row-bottom {
         flex-direction: column;
         align-items: stretch;
+        gap: var(--space-3);
       }
+
+      .controls-bottom-actions {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
       .trips-header {
         flex-direction: column;
         align-items: stretch;
+        gap: var(--space-3);
+        padding: 14px 16px;
+      }
+
+      .trips-actions {
+        width: 100%;
+        display: flex;
+        gap: var(--space-2);
+      }
+
+      .trips-actions .btn {
+        flex: 1;
+        min-width: 0;
+        justify-content: center;
+        padding: 9px 12px;
+      }
+
+      .modal-backdrop {
+        padding: 12px 10px;
+      }
+
+      .modal-card {
+        width: 94vw;
+        max-width: 580px;
+        max-height: 88vh;
+        padding: 20px 16px;
+      }
+
+      .setup-step {
+        padding: 12px 14px !important;
+      }
+
+      .setup-step code {
+        overflow-wrap: break-word;
+        word-break: break-all;
+      }
+
+      .setup-step .btn {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+        white-space: normal;
+      }
+
+      .pagefoot-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-5);
+      }
+
+      .foot-links {
+        width: 100%;
+        justify-content: flex-start;
+        gap: var(--space-2);
+      }
+
+      .foot-btn {
+        flex: 1;
+        min-width: 140px;
+        justify-content: center;
+      }
+
+      #homeEmptyState {
+        padding-top: var(--space-2);
+        padding-bottom: var(--space-6);
+      }
+
+      #homeEmptyState .notice-card,
+      #homeEmptyState > div {
+        padding: 12px 16px !important;
+        text-align: center;
+        gap: var(--space-2);
+      }
+
+      #homeEmptyState .notice-text,
+      #homeEmptyState span {
+        font-size: 13px !important;
+        line-height: 1.4;
+        word-break: break-word;
+      }
+    }
+
+    /* Mobile Breakpoint (<600px) */
+    @media (max-width: 600px) {
+      .chart-card {
+        padding: 16px;
+      }
+
+      .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+      }
+
+      .chart-toggle-group {
+        align-self: flex-start;
+      }
+
+      .chart-canvas-wrapper {
+        height: 200px;
+      }
+
+      .cat-bar-item {
+        padding: 8px 12px;
+      }
+    }
+
+    /* Small Mobile Breakpoint (<=480px) */
+    @media (max-width: 480px) {
+      .metrics-bar {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .metrics-bar-item {
+        padding: 10px 14px;
+        min-width: 0;
+      }
+
+      .metric-val {
+        font-size: 17px;
+      }
+
+      .metric-label {
+        font-size: 10px;
+      }
+
+      .metric-sub {
+        font-size: 10px;
+      }
+
+      .detail-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+    }
+
+    /* Extra Small Mobile (<=375px) */
+    @media (max-width: 375px) {
+      .brand-title {
+        font-size: var(--text-sm);
+      }
+      .brand-badge {
+        padding: 3px 8px;
+        font-size: var(--text-sm);
+      }
+      .foot-btn {
+        min-width: 100%;
       }
     }
   </style>
@@ -1507,7 +1817,7 @@
             </button>
           </div>
 
-          <div style="display: flex; align-items: center; gap: var(--space-3);">
+          <div class="controls-bottom-actions">
             <div id="statusBadge"></div>
             <button class="btn-reset-filters" onclick="resetAllFilters()" title="Restablecer filtros" aria-label="Restablecer filtros">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -1532,13 +1842,13 @@
 
     <!-- ─── Notice Banner (when no data is loaded) ─── -->
     <section id="homeEmptyState" class="container" style="padding-top: var(--space-2); padding-bottom: var(--space-8);">
-      <div style="display: flex; align-items: center; justify-content: center; gap: var(--space-3); padding: var(--space-4) var(--space-6); background: var(--surface-warm); border-radius: var(--radius-lg); border: 1px solid var(--border-soft); text-align: center;">
+      <div class="notice-card" style="display: flex; align-items: center; justify-content: center; gap: var(--space-3); padding: var(--space-4) var(--space-6); background: var(--surface-warm); border-radius: var(--radius-lg); border: 1px solid var(--border-soft); text-align: center;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--muted);">
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="12" y1="16" x2="12" y2="12"></line>
           <line x1="12" y1="8" x2="12.01" y2="8"></line>
         </svg>
-        <span style="font-size: var(--text-sm); color: var(--muted);">
+        <span class="notice-text" style="font-size: var(--text-sm); color: var(--muted);">
           Necesitás la extensión instalada y una sesión activa en <a href="https://riders.uber.com/trips" target="_blank" rel="noopener" style="color: var(--fg); font-weight: 600; text-decoration: underline; text-underline-offset: 2px;">riders.uber.com</a>
         </span>
       </div>
@@ -1632,7 +1942,7 @@
               <span id="tableSubtitle">Hacé clic en cualquier fila para inspeccionar el itinerario completo</span>
               <span id="detailCount" style="display:none">0 viajes</span>
             </div>
-            <div style="display: flex; align-items: center; gap: var(--space-2);">
+            <div class="trips-actions" style="display: flex; align-items: center; gap: var(--space-2);">
               <button class="btn btn-secondary" onclick="exportCSV()" style="font-size: 13px; padding: 8px 14px;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 <span>Exportar CSV</span>
