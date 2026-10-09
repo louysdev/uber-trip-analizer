@@ -1,1496 +1,2787 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Uber Trip Analyzer</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-<style>
-  :root, .light {
-    /* Uber Design System Tokens - Light Mode (Default) */
-    --primary: #000000;
-    --on-primary: #ffffff;
-    --canvas: #ffffff;
-    --canvas-soft: #efefef;
-    --canvas-softer: #f3f3f3;
-    --surface-pressed: #e2e2e2;
-    --body: #5e5e5e;
-    --mute: #afafaf;
-    --ink: #000000;
-    --link: #0000ee;
-    --hairline-mid: #4b4b4b;
-    --black-elevated: #282828;
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Uber Trip Analyzer · Analizador de viajes y gastos</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
-    /* Semantic mappings */
-    --bg: #f3f3f3;
-    --surface: var(--canvas);
-    --surface2: var(--canvas-soft);
-    --border: var(--surface-pressed);
-    --text: var(--ink);
-    --text2: var(--body);
-    --accent: var(--primary);
-    --accent2: var(--black-elevated);
-    --green: #2ecc71;
-    --orange: #f39c12;
-    --red: #e74c3c;
-    --chart-grid: rgba(0, 0, 0, 0.06);
-    --chart-text: #5e5e5e;
-    --hover: var(--canvas-soft);
+  <style>
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Uber Design System Tokens - Contract Strict
+     * ─────────────────────────────────────────────────────────────────── */
+    :root {
+      /* Surface */
+      --bg:           #ffffff;
+      --surface:      #ffffff;
+      --surface-warm: #f8f8f8;
 
-    /* Cancel badge tokens */
-    --badge-cancel-bg: rgba(231, 76, 60, 0.10);
-    --badge-cancel-text: #c0392b;
-    --badge-cancel-border: rgba(231, 76, 60, 0.25);
-  }
+      /* Foreground */
+      --fg:    #000000;
+      --fg-2:  #000000;
+      --muted: #4b4b4b;
+      --meta:  #afafaf;
 
-  .dark {
-    /* Uber Design System Tokens - Dark Mode (Inverted values) */
-    --primary: #ffffff;
-    --on-primary: #000000;
-    --canvas: #141414;
-    --canvas-soft: #1f1f1f;
-    --canvas-softer: #282828;
-    --surface-pressed: #333333;
-    --body: #afafaf;
-    --mute: #5e5e5e;
-    --ink: #ffffff;
-    --link: #4a8bf5;
-    --hairline-mid: #e2e2e2;
-    --black-elevated: #1f1f1f;
+      /* Border */
+      --border:      #000000;
+      --border-soft: rgba(0, 0, 0, 0.1);
 
-    /* Semantic mappings */
-    --bg: #0a0a0a;
-    --surface: var(--canvas);
-    --surface2: var(--canvas-soft);
-    --border: var(--surface-pressed);
-    --text: var(--ink);
-    --text2: var(--body);
-    --accent: var(--primary);
-    --accent2: var(--black-elevated);
-    --green: #2ecc71;
-    --orange: #f39c12;
-    --red: #e74c3c;
-    --chart-grid: rgba(255, 255, 255, 0.08);
-    --chart-text: #afafaf;
-    --hover: var(--canvas-soft);
+      /* Accent (Pure Black in Uber B&W system) */
+      --accent:        #000000;
+      --accent-on:     #ffffff;
+      --accent-hover:  #e2e2e2;
+      --accent-active: rgba(0, 0, 0, 0.08);
 
-    /* Cancel badge tokens */
-    --badge-cancel-bg: rgba(231, 76, 60, 0.20);
-    --badge-cancel-text: #ff6b6b;
-    --badge-cancel-border: rgba(231, 76, 60, 0.35);
-  }
+      /* Semantic */
+      --success: #16a34a;
+      --warn:    #eab308;
+      --danger:  #dc2626;
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: 'Inter', system-ui, 'Helvetica Neue', Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
-  }
+      /* Typography */
+      --font-display: "UberMove", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --font-body:    "UberMoveText", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --font-mono:    ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
 
-  /* Nav bar / Header */
-  .header {
-    background: var(--canvas);
-    border-bottom: 1px solid var(--surface-pressed);
-    padding: 16px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 16px;
-  }
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .header-left svg {
-    color: var(--ink);
-    flex-shrink: 0;
-  }
-  .header h1 {
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 28px;
-    color: var(--ink);
-    letter-spacing: -0.2px;
-  }
-  .header .sub {
-    font-size: 13px;
-    color: var(--body);
-    font-weight: 400;
-    margin-left: 4px;
-  }
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
+      /* Type scale */
+      --text-xs:   12px;
+      --text-sm:   14px;
+      --text-base: 16px;
+      --text-lg:   18px;
+      --text-xl:   24px;
+      --text-2xl:  32px;
+      --text-3xl:  36px;
+      --text-4xl:  52px;
 
-  /* Button subtle (settings gear) */
-  .settings-btn {
-    background: var(--canvas-soft);
-    color: var(--ink);
-    border: 1px solid transparent;
-    border-radius: 999px;
-    padding: 10px 18px;
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 20px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: background .15s;
-  }
-  .settings-btn:hover {
-    background: var(--surface-pressed);
-  }
+      --leading-body:     1.50;
+      --leading-tight:    1.23;
+      --tracking-display: normal;
 
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 24px;
-  }
+      /* Spacing (8px grid) */
+      --space-1:  4px;
+      --space-2:  8px;
+      --space-3:  12px;
+      --space-4:  16px;
+      --space-5:  20px;
+      --space-6:  24px;
+      --space-8:  32px;
+      --space-12: 48px;
 
-  /* Search bar (card-content style) */
-  .search-bar {
-    background: var(--canvas);
-    border: 1px solid var(--surface-pressed);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: flex-end;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-  .search-bar .field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .search-bar label {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--body);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .search-bar input[type="date"] {
-    background: var(--canvas-soft);
-    color: var(--ink);
-    border: 1px solid transparent;
-    border-radius: 0px;
-    padding: 12px 16px;
-    font-size: 14px;
-    font-family: inherit;
-    min-width: 180px;
-    outline: none;
-    transition: border-color .15s;
-  }
-  .search-bar input[type="date"]:focus {
-    border-color: var(--ink);
-  }
-  .search-bar .btn-search {
-    background: var(--primary);
-    color: var(--on-primary);
-    border: none;
-    border-radius: 999px;
-    padding: 12px 28px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background .15s, opacity .15s;
-  }
-  .search-bar .btn-search:hover:not(:disabled) {
-    background: var(--black-elevated);
-  }
-  .search-bar .btn-search:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-  .search-bar #statusBadge {
-    margin-left: auto;
-    align-self: center;
-  }
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    border-radius: 999px;
-    background: var(--canvas-soft);
-    color: var(--ink);
-    font-size: 13px;
-    font-weight: 500;
-  }
-  .status-badge.ok,
-  .status-badge.err,
-  .status-badge.wait {
-    background: var(--canvas-soft);
-    color: var(--ink);
-  }
+      /* Section rhythm */
+      --section-y-desktop: 48px;
+      --section-y-tablet:  36px;
+      --section-y-phone:   24px;
 
-  /* Error box */
-  .error-box {
-    background: var(--canvas);
-    border: none;
-    border-left: 3px solid #e74c3c;
-    padding: 16px 20px;
-    color: var(--ink);
-    font-size: 14px;
-    line-height: 20px;
-    margin-bottom: 20px;
-    border-radius: 0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    display: none;
-  }
-  .error-box.show {
-    display: block;
-  }
+      /* Radius: Full pill 999px for interactive elements */
+      --radius-sm:   999px;
+      --radius-md:   8px;
+      --radius-lg:   12px;
+      --radius-pill: 9999px;
 
-  /* Loading */
-  .loading {
-    text-align: center;
-    padding: 60px 24px;
-    color: var(--body);
-    display: none;
-  }
-  .loading.show {
-    display: block;
-  }
-  .loading .spinner {
-    display: inline-block;
-    width: 40px;
-    height: 40px;
-    border: 3px solid var(--surface-pressed);
-    border-top-color: var(--ink);
-    border-radius: 50%;
-    animation: spin .8s linear infinite;
-    margin-bottom: 16px;
-  }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
+      /* Elevation */
+      --elev-flat:   none;
+      --elev-ring:   0 0 0 1px var(--border-soft);
+      --elev-raised: rgba(0, 0, 0, 0.12) 0px 4px 16px 0px;
+      --elev-hover:  rgba(0, 0, 0, 0.16) 0px 6px 20px 0px;
 
-  /* Stat cards (card-soft-tinted style) */
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-  .stat-card {
-    background: var(--canvas-soft);
-    border: 1px solid var(--surface-pressed);
-    border-radius: 16px;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-  .stat-card .label {
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 20px;
-    color: var(--mute);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .stat-card .value,
-  .stat-card .value.blue,
-  .stat-card .value.green,
-  .stat-card .value.orange {
-    font-size: 24px;
-    font-weight: 700;
-    line-height: 32px;
-    color: var(--ink) !important;
-    margin-top: 8px;
-  }
+      /* Focus */
+      --focus-ring: 0 0 0 2px var(--fg);
 
-  /* Filters bar (card-content style) */
-  .filters {
-    background: var(--canvas);
-    border: 1px solid var(--surface-pressed);
-    border-radius: 16px;
-    padding: 20px 24px;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    flex-wrap: wrap;
-  }
-  .filters label {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--body);
-  }
-  .filters select,
-  .filters input[type="date"] {
-    background: var(--canvas-soft);
-    color: var(--ink);
-    border: 1px solid transparent;
-    border-radius: 0px;
-    padding: 10px 14px;
-    font-size: 14px;
-    font-family: inherit;
-    outline: none;
-    transition: border-color .15s;
-  }
-  .filters select:focus,
-  .filters input[type="date"]:focus {
-    border-color: var(--ink);
-  }
-  .filters button {
-    background: var(--canvas-soft);
-    color: var(--ink);
-    border: 1px solid var(--surface-pressed);
-    border-radius: 999px;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 8px 16px;
-    cursor: pointer;
-    transition: background .15s;
-  }
-  .filters button:hover {
-    background: var(--surface-pressed);
-  }
+      --motion-fast:   150ms;
+      --motion-base:   200ms;
+      --ease-standard: cubic-bezier(0.2, 0, 1, 1);
 
-  /* Charts (card-content style) */
-  .charts {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 24px;
-  }
-  @media (max-width: 768px) {
-    .charts {
-      grid-template-columns: 1fr;
+      --container-max:            1180px;
+      --container-gutter-desktop: 28px;
+      --container-gutter-tablet:  20px;
+      --container-gutter-phone:   16px;
+
+      /* Helpers */
+      --chip-bg: #efefef;
+      --chip-hover: #e2e2e2;
+      --card-bg: #ffffff;
+      --badge-cancel-bg: #fee2e2;
+      --badge-cancel-fg: #991b1b;
+      --badge-success-bg: #dcfce7;
+      --badge-success-fg: #166534;
     }
-  }
-  .chart-card {
-    background: var(--canvas);
-    border: 1px solid var(--surface-pressed);
-    border-radius: 16px;
-    padding: 24px;
-  }
-  .chart-card h3 {
-    font-size: 16px;
-    font-weight: 500;
-    line-height: 20px;
-    color: var(--ink);
-    margin-bottom: 16px;
-  }
-  .chart-card canvas {
-    max-height: 320px;
-  }
 
-  /* Breakdown table (card-content style) */
-  .breakdown {
-    background: var(--canvas);
-    border: 1px solid var(--surface-pressed);
-    border-radius: 16px;
-    overflow: hidden;
-    margin-bottom: 24px;
-  }
-  .breakdown-header {
-    padding: 18px 24px;
-    font-size: 16px;
-    font-weight: 500;
-    color: var(--ink);
-    border-bottom: 1px solid var(--surface-pressed);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .breakdown-header .count {
-    color: var(--body);
-    font-weight: 400;
-    font-size: 14px;
-  }
-  .breakdown table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  .breakdown th {
-    background: var(--canvas-soft);
-    color: var(--ink);
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 16px;
-    text-align: left;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--surface-pressed);
-  }
-  .breakdown td {
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 20px;
-    color: var(--ink);
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--surface-pressed);
-  }
-  .breakdown tr:last-child td {
-    border-bottom: none;
-  }
-  .breakdown tr:hover td {
-    background: var(--canvas-soft);
-  }
-  .breakdown td strong {
-    color: var(--ink);
-    font-weight: 500;
-  }
-  .color-dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-right: 8px;
-    vertical-align: middle;
-  }
+    /* Dark Mode Theme */
+    [data-theme="dark"] {
+      --bg:           #0a0a0a;
+      --surface:      #141414;
+      --surface-warm: #1c1c1c;
 
-  /* Detail table */
-  .detail-section {
-    margin-bottom: 24px;
-  }
-  .detail-section .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 4px 12px 4px;
-    background: transparent;
-    border: none;
-  }
-  .detail-section .header h3 {
-    font-size: 16px;
-    font-weight: 500;
-    line-height: 20px;
-    color: var(--ink);
-  }
-  .detail-section #detailCount {
-    font-size: 14px;
-    color: var(--body);
-  }
-  .detail-table-wrap {
-    max-height: 500px;
-    overflow-y: auto;
-    border: 1px solid var(--surface-pressed);
-    border-radius: 16px;
-    background: var(--canvas);
-  }
-  .detail-table-wrap table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  .detail-table-wrap th {
-    position: sticky;
-    top: 0;
-    background: var(--canvas-soft);
-    color: var(--ink);
-    text-align: left;
-    padding: 12px 16px;
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 16px;
-    border-bottom: 1px solid var(--surface-pressed);
-    z-index: 1;
-  }
-  .detail-table-wrap td {
-    padding: 12px 16px;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 20px;
-    color: var(--ink);
-    border-bottom: 1px solid var(--surface-pressed);
-    white-space: nowrap;
-  }
-  .detail-table-wrap tr:hover td {
-    background: var(--canvas-soft);
-  }
+      --fg:    #ffffff;
+      --fg-2:  #ffffff;
+      --muted: #a3a3a3;
+      --meta:  #737373;
 
-  /* Export buttons (button-secondary style) */
-  .export-bar {
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    margin-top: 16px;
-  }
-  .export-btn {
-    background: var(--canvas);
-    color: var(--ink);
-    border: 1px solid var(--surface-pressed);
-    border-radius: 999px;
-    padding: 10px 20px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all .15s;
-  }
-  .export-btn:hover {
-    background: var(--canvas-soft);
-    border-color: var(--hairline-mid);
-  }
+      --border:      #ffffff;
+      --border-soft: rgba(255, 255, 255, 0.15);
 
-  /* Badges */
-  .badge,
-  .badge-moto,
-  .badge-uberx,
-  .badge-uber-espera,
-  .badge-default {
-    display: inline-block;
-    background: var(--canvas-soft);
-    color: var(--ink);
-    border-radius: 999px;
-    padding: 4px 12px;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 16px;
-  }
+      --accent:        #ffffff;
+      --accent-on:     #000000;
+      --accent-hover:  #262626;
+      --accent-active: rgba(255, 255, 255, 0.1);
 
-  .badge-cancelado,
-  .badge.badge-cancelado {
-    display: inline-block;
-    background: var(--badge-cancel-bg);
-    color: var(--badge-cancel-text);
-    border: 1px solid var(--badge-cancel-border);
-    border-radius: 999px;
-    padding: 3px 11px;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 16px;
-  }
+      --elev-ring:   0 0 0 1px var(--border-soft);
+      --elev-raised: rgba(0, 0, 0, 0.4) 0px 4px 16px 0px;
+      --elev-hover:  rgba(0, 0, 0, 0.6) 0px 6px 20px 0px;
 
-  /* Modal overlay & Setup Wizard */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    backdrop-filter: blur(2px);
-  }
-  .modal-overlay.hidden,
-  .modal-overlay:has(#setupWizard.hidden) {
-    display: none !important;
-  }
-  .modal-card {
-    background: var(--canvas);
-    color: var(--ink);
-    border-radius: 16px;
-    padding: 28px;
-    width: 100%;
-    max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
-    border: 1px solid var(--surface-pressed);
-    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.2);
-    position: relative;
-  }
-  .modal-top-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--surface-pressed);
-  }
-  .modal-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--ink);
-  }
-  .modal-close-btn {
-    background: var(--canvas-soft);
-    color: var(--ink);
-    border: none;
-    border-radius: 999px;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background .15s;
-  }
-  .modal-close-btn:hover {
-    background: var(--surface-pressed);
-  }
+      --chip-bg: #222222;
+      --chip-hover: #333333;
+      --card-bg: #141414;
+      --badge-cancel-bg: #450a0a;
+      --badge-cancel-fg: #fca5a5;
+      --badge-success-bg: #052e16;
+      --badge-success-fg: #86efac;
+    }
 
-  .setup-wizard {
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: 0;
-    margin-bottom: 8px;
-  }
-  .setup-wizard.hidden {
-    display: none !important;
-  }
-  .setup-header {
-    margin-bottom: 20px;
-  }
-  .setup-header h2 {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--ink);
-    margin-bottom: 4px;
-  }
-  .setup-header p {
-    font-size: 13px;
-    color: var(--body);
-  }
-  .setup-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  .setup-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 16px;
-    background: var(--canvas-soft);
-    border-radius: 12px;
-    border: 1px solid var(--surface-pressed);
-  }
-  .setup-step.completed {
-    border-color: var(--surface-pressed);
-    background: var(--canvas-softer);
-  }
-  .step-number {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--primary);
-    color: var(--on-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 14px;
-    flex-shrink: 0;
-  }
-  .setup-step.completed .step-number {
-    background: var(--primary);
-    color: var(--on-primary);
-  }
-  .step-content {
-    flex: 1;
-  }
-  .step-content h3 {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--ink);
-    margin-bottom: 4px;
-  }
-  .step-content p {
-    font-size: 12px;
-    color: var(--body);
-    line-height: 1.5;
-    margin-bottom: 10px;
-  }
-  .step-content code {
-    background: var(--canvas);
-    color: var(--ink);
-    border: 1px solid var(--surface-pressed);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 11px;
-  }
-  .setup-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 20px;
-    background: var(--primary);
-    color: var(--on-primary);
-    border: none;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    text-decoration: none;
-    transition: background .15s;
-  }
-  .setup-btn:hover {
-    background: var(--black-elevated);
-  }
-  .step-status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--body);
-    flex-shrink: 0;
-    min-width: 100px;
-  }
-  .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .dot.green { background: #2ecc71; }
-  .dot.orange { background: #f39c12; }
-  .dot.red { background: #e74c3c; }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  /* Modal Theme Toggle Row */
-  .modal-theme-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 18px;
-    border-top: 1px solid var(--surface-pressed);
-    margin-top: 16px;
-  }
-  .theme-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .theme-title {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--ink);
-  }
-  .theme-desc {
-    font-size: 12px;
-    color: var(--body);
-  }
-  .theme-btn {
-    background: var(--canvas-soft);
-    color: var(--ink);
-    border: 1px solid var(--surface-pressed);
-    border-radius: 999px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: background .15s;
-  }
-  .theme-btn:hover {
-    background: var(--surface-pressed);
-  }
+    body {
+      background-color: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: var(--leading-body);
+      -webkit-font-smoothing: antialiased;
+      transition: background-color var(--motion-base) var(--ease-standard), color var(--motion-base) var(--ease-standard);
+    }
 
-  .hidden { display: none !important; }
+    .container {
+      max-width: var(--container-max);
+      margin-inline: auto;
+      padding-inline: var(--container-gutter-desktop);
+    }
 
-  @media (max-width: 600px) {
-    .header { padding: 12px 16px; }
-    .header h1 { font-size: 18px; }
-    .header .sub { display: none; }
-    .settings-btn-label { display: none; }
-    .settings-btn { padding: 8px 12px; }
-    .container { padding: 16px 12px; }
-    .search-bar { padding: 16px; }
-    .search-bar input[type="date"] { min-width: 100%; width: 100%; }
-    .search-bar .btn-search { width: 100%; }
-    .filters { padding: 16px; gap: 10px; }
-    .setup-step { flex-direction: column; }
-    .step-status { margin-top: 8px; }
-    .modal-card { padding: 20px 16px; margin: 10px; }
-  }
-</style>
+    @media (max-width: 768px) {
+      .container { padding-inline: var(--container-gutter-phone); }
+    }
+
+    /* ─── Top Navigation ──────────────────────────────────────────────── */
+    .topnav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border-soft);
+      backdrop-filter: blur(8px);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      gap: var(--space-4);
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--fg);
+      color: var(--bg);
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--text-base);
+      padding: 4px 12px;
+      border-radius: var(--radius-sm);
+      letter-spacing: -0.5px;
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--text-base);
+      color: var(--fg);
+      display: flex;
+      align-items: center;
+      letter-spacing: -0.2px;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    /* ─── Buttons & Pills ─────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      border-radius: var(--radius-sm);
+      padding: 10px 18px;
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all var(--motion-fast) var(--ease-standard);
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .btn:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--accent-on);
+      border-color: var(--accent);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--muted);
+      border-color: var(--muted);
+    }
+    .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--chip-bg);
+      color: var(--fg);
+      border-color: transparent;
+    }
+    .btn-secondary:hover {
+      background: var(--chip-hover);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--fg);
+      border: 1px solid var(--border-soft);
+    }
+    .btn-ghost:hover {
+      background: var(--surface-warm);
+    }
+
+    .btn-icon {
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      width: 40px;
+      height: 40px;
+    }
+
+    /* Category Pill Selector */
+    .pill-group {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+    .pill-group::-webkit-scrollbar { display: none; }
+
+    .chip-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--chip-bg);
+      color: var(--fg);
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      padding: 8px 16px;
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all var(--motion-fast) var(--ease-standard);
+    }
+
+    .chip-btn svg {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2;
+      flex-shrink: 0;
+    }
+
+    .chip-btn:hover {
+      background: var(--chip-hover);
+    }
+
+    .chip-btn.active {
+      background: var(--fg);
+      color: var(--bg);
+    }
+
+    .btn-reset-filters {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 35px;
+      height: 35px;
+      padding: 0;
+      background: var(--chip-bg);
+      color: var(--muted);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--motion-fast) var(--ease-standard);
+      flex-shrink: 0;
+    }
+
+    .btn-reset-filters svg {
+      width: 15px;
+      height: 15px;
+      stroke-width: 2;
+      transition: transform var(--motion-fast) var(--ease-standard);
+    }
+
+    .btn-reset-filters:hover {
+      background: var(--chip-hover);
+      color: var(--fg);
+      border-color: var(--border);
+    }
+
+    .btn-reset-filters:hover svg {
+      transform: rotate(-45deg);
+    }
+
+    .btn-reset-filters:active {
+      transform: scale(0.94);
+    }
+
+    /* Category-specific filter chips styling */
+    .chip-btn[data-type="Moto"] {
+      color: #0369a1;
+      background: #e0f2fe;
+    }
+    .chip-btn[data-type="Moto"]:hover {
+      background: #bae6fd;
+    }
+    .chip-btn[data-type="Moto"].active {
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    .chip-btn[data-type="UberX"] {
+      color: #6b21a8;
+      background: #f3e8ff;
+    }
+    .chip-btn[data-type="UberX"]:hover {
+      background: #e9d5ff;
+    }
+    .chip-btn[data-type="UberX"].active {
+      background: #9333ea;
+      color: #ffffff;
+    }
+
+    .chip-btn[data-type="Wait & Save"] {
+      color: #92400e;
+      background: #fef3c7;
+    }
+    .chip-btn[data-type="Wait & Save"]:hover {
+      background: #fde68a;
+    }
+    .chip-btn[data-type="Wait & Save"].active {
+      background: #d97706;
+      color: #ffffff;
+    }
+
+    .chip-btn[data-type="CANCELED"] {
+      color: var(--badge-cancel-fg);
+      background: var(--badge-cancel-bg);
+    }
+    .chip-btn[data-type="CANCELED"]:hover {
+      opacity: 0.9;
+    }
+    .chip-btn[data-type="CANCELED"].active {
+      background: #dc2626;
+      color: #ffffff;
+    }
+
+    /* Dark Mode Theme overrides for category chips */
+    [data-theme="dark"] .chip-btn[data-type="Moto"] {
+      color: #7dd3fc;
+      background: #082f49;
+    }
+    [data-theme="dark"] .chip-btn[data-type="Moto"]:hover {
+      background: #0c4a6e;
+    }
+    [data-theme="dark"] .chip-btn[data-type="Moto"].active {
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    [data-theme="dark"] .chip-btn[data-type="UberX"] {
+      color: #d8b4fe;
+      background: #3b0764;
+    }
+    [data-theme="dark"] .chip-btn[data-type="UberX"]:hover {
+      background: #581c87;
+    }
+    [data-theme="dark"] .chip-btn[data-type="UberX"].active {
+      background: #9333ea;
+      color: #ffffff;
+    }
+
+    [data-theme="dark"] .chip-btn[data-type="Wait & Save"] {
+      color: #fde68a;
+      background: #451a03;
+    }
+    [data-theme="dark"] .chip-btn[data-type="Wait & Save"]:hover {
+      background: #78350f;
+    }
+    [data-theme="dark"] .chip-btn[data-type="Wait & Save"].active {
+      background: #d97706;
+      color: #ffffff;
+    }
+
+    [data-theme="dark"] .chip-btn[data-type="CANCELED"] {
+      color: #fca5a5;
+      background: #450a0a;
+    }
+    [data-theme="dark"] .chip-btn[data-type="CANCELED"]:hover {
+      background: #7f1d1d;
+    }
+    [data-theme="dark"] .chip-btn[data-type="CANCELED"].active {
+      background: #dc2626;
+      color: #ffffff;
+    }
+
+    /* ─── Compact Metrics Bar (Horizontal Single Container) ─────────────── */
+    .metrics-bar {
+      display: flex;
+      align-items: stretch;
+      background: var(--card-bg);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--elev-raised);
+      margin-bottom: var(--space-6);
+      overflow: hidden;
+    }
+
+    .metrics-bar-item {
+      flex: 1;
+      min-width: 170px;
+      padding: 14px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: background var(--motion-fast);
+    }
+
+    .metrics-bar-item + .metrics-bar-item {
+      border-left: 1px solid var(--border-soft);
+    }
+
+    .metrics-bar-item:hover {
+      background: var(--surface-warm);
+    }
+
+    .metric-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+
+    .metric-icon {
+      color: var(--meta);
+      display: flex;
+      align-items: center;
+    }
+
+    .metric-val {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--fg);
+      line-height: 1.2;
+      letter-spacing: -0.3px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 860px) {
+      .metrics-bar {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .metrics-bar-item + .metrics-bar-item {
+        border-left: none;
+      }
+      .metrics-bar-item:nth-child(even) {
+        border-left: 1px solid var(--border-soft);
+      }
+      .metrics-bar-item:nth-child(n+3) {
+        border-top: 1px solid var(--border-soft);
+      }
+    }
+
+    @media (max-width: 520px) {
+      .metrics-bar {
+        grid-template-columns: 1fr;
+      }
+      .metrics-bar-item + .metrics-bar-item {
+        border-left: none;
+        border-top: 1px solid var(--border-soft);
+      }
+    }
+
+    /* ─── Control Bar (Filters & Search) ──────────────────────────────── */
+    .controls-panel {
+      background: var(--surface-warm);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      margin-bottom: var(--space-6);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    .controls-row-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+    }
+
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .search-input-wrap svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 16px 12px 42px;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      outline: none;
+      transition: border-color var(--motion-fast);
+    }
+    .search-input:focus {
+      border-color: var(--border);
+      box-shadow: 0 0 0 1px var(--fg);
+    }
+
+    .date-filter-group {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      flex: 1;
+      min-width: 320px;
+    }
+
+    .date-field {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--bg);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-sm);
+      padding: 10px 16px;
+      flex: 1;
+      transition: border-color var(--motion-fast);
+    }
+
+    .date-field:focus-within {
+      border-color: var(--border);
+      box-shadow: 0 0 0 1px var(--fg);
+    }
+
+    .date-field label {
+      font-size: var(--text-xs);
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      user-select: none;
+    }
+
+    .date-field input[type="date"] {
+      border: none;
+      background: transparent;
+      color: var(--fg);
+      font-family: inherit;
+      font-size: var(--text-sm);
+      outline: none;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .date-separator {
+      color: var(--meta);
+      font-size: var(--text-sm);
+      user-select: none;
+      padding: 0 2px;
+    }
+
+    .controls-row-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--border-soft);
+    }
+
+    /* ─── Visual Insights: Charts & Budget ────────────────────────────── */
+    .insights-grid {
+      display: block;
+      margin-bottom: var(--space-8);
+    }
+
+    .chart-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-md);
+      padding: var(--space-6);
+      box-shadow: var(--elev-raised);
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-4);
+    }
+
+    .chart-title {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--fg);
+    }
+
+    .chart-toggle-group {
+      display: flex;
+      gap: 4px;
+      background: var(--surface-warm);
+      padding: 2px;
+      border-radius: var(--radius-sm);
+    }
+
+    .chart-tab-btn {
+      padding: 4px 10px;
+      font-size: var(--text-xs);
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .chart-tab-btn.active {
+      background: var(--fg);
+      color: var(--bg);
+    }
+
+    .chart-canvas-wrapper {
+      position: relative;
+      height: 260px;
+      width: 100%;
+    }
+
+    /* Category Spend Breakdown */
+    .category-breakdown-card {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    .category-bars {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .cat-bar-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-md);
+      background: var(--surface-warm);
+      border: 1px solid var(--border-soft);
+      transition: background var(--motion-fast) var(--ease-standard);
+    }
+
+    .cat-bar-item:hover {
+      background: var(--chip-hover);
+    }
+
+    .cat-bar-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+    }
+
+    .cat-bar-identity {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cat-type-icon-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+      transition: background var(--motion-fast) var(--ease-standard);
+    }
+
+    .cat-type-icon-badge svg {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2;
+    }
+
+    .cat-type-icon-badge.moto { background: #e0f2fe; color: #0369a1; }
+    .cat-type-icon-badge.uberx { background: #f3e8ff; color: #6b21a8; }
+    .cat-type-icon-badge.waitsave { background: #fef3c7; color: #92400e; }
+    .cat-type-icon-badge.canceled { background: var(--badge-cancel-bg); color: var(--badge-cancel-fg); }
+    .cat-type-icon-badge.other { background: var(--chip-bg); color: var(--fg); }
+
+    [data-theme="dark"] .cat-type-icon-badge.moto { background: #082f49; color: #7dd3fc; }
+    [data-theme="dark"] .cat-type-icon-badge.uberx { background: #3b0764; color: #d8b4fe; }
+    [data-theme="dark"] .cat-type-icon-badge.waitsave { background: #451a03; color: #fde68a; }
+
+    /* Círculo con el conteo de viajes al lado del icono de la categoría */
+    .cat-count-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .cat-count-circle.moto { background: #e0f2fe; color: #0284c7; }
+    .cat-count-circle.uberx { background: #f3e8ff; color: #9333ea; }
+    .cat-count-circle.waitsave { background: #fef3c7; color: #d97706; }
+    .cat-count-circle.other { background: var(--chip-bg); color: var(--fg); }
+
+    [data-theme="dark"] .cat-count-circle.moto { background: #082f49; color: #38bdf8; }
+    [data-theme="dark"] .cat-count-circle.uberx { background: #3b0764; color: #c084fc; }
+    [data-theme="dark"] .cat-count-circle.waitsave { background: #451a03; color: #fbbf24; }
+
+    .cat-bar-name {
+      font-weight: 700;
+      color: var(--fg);
+      font-size: var(--text-sm);
+      line-height: 1.2;
+    }
+
+    .cat-bar-amount {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: var(--text-sm);
+      color: var(--fg);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    /* Barra de progreso inferior */
+    .cat-bar-bottom-row {
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .cat-bar-track {
+      flex: 1;
+      width: 100%;
+      height: 5px;
+      background: var(--chip-bg);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .cat-bar-fill {
+      height: 100%;
+      border-radius: var(--radius-sm);
+      transition: width var(--motion-base) var(--ease-standard);
+    }
+
+    .cat-bar-fill.moto { background: #0284c7; }
+    .cat-bar-fill.uberx { background: #9333ea; }
+    .cat-bar-fill.waitsave { background: #d97706; }
+    .cat-bar-fill.other { background: var(--fg); }
+
+    [data-theme="dark"] .cat-bar-fill.moto { background: #38bdf8; }
+    [data-theme="dark"] .cat-bar-fill.uberx { background: #c084fc; }
+    [data-theme="dark"] .cat-bar-fill.waitsave { background: #fbbf24; }
+
+    /* ─── Trips Table Section ─────────────────────────────────────────── */
+    .trips-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-md);
+      box-shadow: var(--elev-raised);
+      margin-bottom: var(--space-12);
+      overflow: hidden;
+    }
+
+    .trips-header {
+      padding: var(--space-5) var(--space-6);
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+    }
+
+    .trips-title-group h2 {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 700;
+      color: var(--fg);
+    }
+
+    .trips-title-group span {
+      font-size: var(--text-xs);
+      color: var(--muted);
+    }
+
+    .table-container {
+      overflow-x: auto;
+      max-height: 580px;
+      overflow-y: auto;
+    }
+
+    .trips-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: var(--text-sm);
+    }
+
+    .trips-table th {
+      background: var(--surface-warm);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: var(--space-3) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border-soft);
+      white-space: nowrap;
+    }
+
+    .trips-table th.col-num,
+    .trips-table td.col-num {
+      text-align: right;
+    }
+
+    .trips-table th.col-status,
+    .trips-table td.col-status {
+      text-align: center;
+    }
+
+    .trips-table td {
+      padding: 14px var(--space-4);
+      border-bottom: 1px solid var(--border-soft);
+      vertical-align: middle;
+      color: var(--fg);
+    }
+
+    .trips-table tr:hover td {
+      background-color: var(--surface-warm);
+      cursor: pointer;
+    }
+
+    .date-cell-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .date-cell-wrap .date-part {
+      font-weight: 600;
+      color: var(--fg);
+      min-width: 60px;
+    }
+
+    .date-cell-wrap .date-dot {
+      color: var(--meta);
+      font-size: 11px;
+    }
+
+    .date-cell-wrap .time-part {
+      font-family: var(--font-mono);
+      font-weight: 500;
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: -0.2px;
+    }
+
+    .type-cell-wrap {
+      display: inline-flex;
+      align-items: center;
+      min-width: 110px;
+    }
+
+    .trip-type-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--chip-bg);
+      font-weight: 600;
+      font-size: var(--text-xs);
+      line-height: 1;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    .trip-type-tag svg {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2;
+      flex-shrink: 0;
+    }
+
+    .trip-type-tag.moto { background: #e0f2fe; color: #0369a1; }
+    .trip-type-tag.uberx { background: #f3e8ff; color: #6b21a8; }
+    .trip-type-tag.waitsave { background: #fef3c7; color: #92400e; }
+    .trip-type-tag.canceled { background: var(--badge-cancel-bg); color: var(--badge-cancel-fg); }
+    .trip-type-tag.other { background: var(--chip-bg); color: var(--fg); }
+
+    [data-theme="dark"] .trip-type-tag.moto { background: #082f49; color: #7dd3fc; }
+    [data-theme="dark"] .trip-type-tag.uberx { background: #3b0764; color: #d8b4fe; }
+    [data-theme="dark"] .trip-type-tag.waitsave { background: #451a03; color: #fde68a; }
+
+    .route-cell {
+      max-width: 320px;
+      line-height: 1.35;
+    }
+
+    .route-pickup {
+      font-weight: 500;
+      color: var(--fg);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 320px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .route-dropoff {
+      font-size: var(--text-xs);
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 320px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 3px;
+    }
+
+    .fare-cell {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: var(--text-base);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+    }
+    .status-pill svg {
+      width: 13px;
+      height: 13px;
+      stroke-width: 2.5;
+    }
+    .status-pill.completed { background: var(--badge-success-bg); color: var(--badge-success-fg); }
+    .status-pill.canceled { background: var(--badge-cancel-bg); color: var(--badge-cancel-fg); }
+
+    /* ─── Modal / Detail Drawer ───────────────────────────────────────── */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-4);
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal-card {
+      background: var(--bg);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      max-width: 580px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--elev-hover);
+      padding: var(--space-6);
+      animation: modalFadeIn var(--motion-fast) var(--ease-standard);
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--space-5);
+      border-bottom: 1px solid var(--border-soft);
+      padding-bottom: var(--space-4);
+    }
+
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .close-btn {
+      background: var(--chip-bg);
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--fg);
+    }
+    .close-btn:hover { background: var(--chip-hover); }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    .detail-item {
+      background: var(--surface-warm);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-soft);
+    }
+
+    .detail-item .lbl {
+      font-size: var(--text-xs);
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .detail-item .val {
+      font-weight: 700;
+      font-size: var(--text-base);
+      color: var(--fg);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .route-visual-card {
+      background: var(--surface-warm);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-md);
+      padding: var(--space-5);
+      margin-bottom: var(--space-6);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      position: relative;
+    }
+
+    .route-point {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+    }
+
+    .point-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--fg);
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+    .point-dot.square { border-radius: 2px; }
+
+    /* ─── Footer ──────────────────────────────────────────────────────── */
+    .pagefoot {
+      background: #000000;
+      color: #ffffff;
+      padding: var(--space-8) 0 var(--space-12);
+      margin-top: var(--space-12);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .pagefoot-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-6);
+    }
+
+    .foot-left {
+      max-width: 520px;
+    }
+
+    .foot-brand-title {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+      margin-bottom: var(--space-2);
+    }
+
+    .foot-desc {
+      font-size: var(--text-sm);
+      color: #afafaf;
+      line-height: var(--leading-body);
+      display: block;
+    }
+
+    .foot-links {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+
+    .foot-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      border-radius: var(--radius-sm);
+      padding: 10px 18px;
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      text-decoration: none;
+      color: #ffffff;
+      background: #1c1c1c;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: all var(--motion-fast) var(--ease-standard);
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .foot-btn:hover {
+      background: #2b2b2b;
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .foot-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px #ffffff;
+    }
+
+    /* Empty state */
+    .empty-state {
+      padding: 64px 24px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .empty-state svg {
+      margin: 0 auto var(--space-4);
+      color: var(--meta);
+      display: block;
+    }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: var(--radius-pill);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      line-height: 1;
+      background: var(--chip-bg);
+      color: var(--muted);
+      border: 1px solid var(--border-soft);
+      white-space: nowrap;
+    }
+    .status-badge.ok {
+      background: var(--badge-success-bg);
+      color: var(--badge-success-fg);
+      border-color: rgba(22, 163, 74, 0.3);
+    }
+    .status-badge.err {
+      background: var(--badge-cancel-bg);
+      color: var(--badge-cancel-fg);
+      border-color: rgba(220, 38, 38, 0.3);
+    }
+
+    /* Error box */
+    .error-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border-soft);
+      border-left: 4px solid var(--danger);
+      padding: 14px 20px;
+      color: var(--fg);
+      font-size: var(--text-sm);
+      line-height: var(--leading-body);
+      border-radius: var(--radius-md);
+      box-shadow: var(--elev-raised);
+      margin-bottom: var(--space-4);
+      display: none;
+    }
+    .error-box.show {
+      display: block;
+    }
+
+    /* Loading spinner */
+    .loading {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--muted);
+      display: none;
+    }
+    .loading.show {
+      display: block;
+    }
+    .spinner {
+      display: inline-block;
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border-soft);
+      border-top-color: var(--fg);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Setup step status dot */
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .dot.green { background: var(--success); }
+    .dot.orange { background: var(--warn); }
+    .dot.red { background: var(--danger); }
+
+    .setup-step.completed {
+      border-color: rgba(22, 163, 74, 0.3) !important;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 640px) {
+      .controls-row-top {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .date-filter-group {
+        width: 100%;
+        min-width: 0;
+      }
+      .search-input-wrap {
+        width: 100%;
+        min-width: 0;
+        max-width: none !important;
+      }
+      .controls-row-bottom {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .trips-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
 </head>
-<body>
+<body data-theme="light">
 
-<header class="header">
-  <div class="header-left">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
-      <path d="m21 8-2 2-1.5-3.7A2 2 0 0 0 15.64 5H8.36a2 2 0 0 0-1.86 1.3L5 10 3 8"/>
-      <path d="M7 14h.01"/>
-      <path d="M17 14h.01"/>
-      <rect width="18" height="8" x="3" y="10" rx="2"/>
-      <path d="M5 18v2"/>
-      <path d="M19 18v2"/>
-    </svg>
-    <h1>Uber Trip Analyzer</h1>
-    <span class="sub">Extraé y analizá tus viajes</span>
-  </div>
-  <div class="header-right">
-    <button class="settings-btn" id="openSettingsBtn" onclick="openSettingsModal()" aria-label="Configuración" title="Configuración">
-      <span>⚙️</span>
-      <span class="settings-btn-label">Configuración</span>
-    </button>
-  </div>
-</header>
-
-<div class="container">
-  <!-- Search bar -->
-  <div class="search-bar" id="searchBar">
-    <div class="field">
-      <label>Desde</label>
-      <input type="date" id="searchFrom">
-    </div>
-    <div class="field">
-      <label>Hasta</label>
-      <input type="date" id="searchTo">
-    </div>
-    <button class="btn-search" id="btnSearch" onclick="searchTrips()">Buscar viajes</button>
-    <div id="statusBadge"></div>
-  </div>
-
-  <!-- Setup wizard wrapped inside modal overlay -->
-  <div class="modal-overlay" id="settingsModal" onclick="if(event.target===this)closeSettingsModal()">
-    <div class="modal-card">
-      <div class="modal-top-bar">
-        <h2 class="modal-title">Configuración</h2>
-        <button class="modal-close-btn" onclick="closeSettingsModal()" aria-label="Cerrar">✕</button>
+  <!-- ─── Top Navigation ─── -->
+  <header class="topnav" data-od-id="topnav">
+    <div class="container nav-inner">
+      <div class="brand-wrap">
+        <div class="brand-badge">Uber</div>
+        <div class="brand-title">Trip Analyzer</div>
       </div>
 
-      <div class="setup-wizard" id="setupWizard">
-        <div class="setup-header">
-          <h2>⚡ Configuración inicial</h2>
-          <p>Seguí estos pasos para empezar a analizar tus viajes</p>
-        </div>
+      <div class="nav-actions">
+        <!-- Extension Setup modal button -->
+        <button class="btn btn-secondary btn-icon" id="openSettingsBtn" onclick="openSyncModal()" aria-label="Configuración de la extensión" title="Configurar extensión">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
 
-        <div class="setup-steps">
-          <div class="setup-step" id="step1">
-            <div class="step-number">1</div>
-            <div class="step-content">
-              <h3>Instalá la extensión</h3>
-              <p>Descargá la extensión, descomprimí el ZIP, y cargala en <code>chrome://extensions</code> con el modo desarrollador activado.</p>
-              <a href="uber-trip-extractor.zip" download class="setup-btn" id="btnDownload">
-                ⬇️ Descargar extensión
-              </a>
-            </div>
-            <div class="step-status" id="step1Status">
-              <span class="dot orange"></span>
-              <span>Pendiente</span>
-            </div>
-          </div>
-
-          <div class="setup-step" id="step2">
-            <div class="step-number">2</div>
-            <div class="step-content">
-              <h3>Iniciá sesión en Uber</h3>
-              <p>Abrí Uber Riders en otra pestaña e iniciá sesión con tu cuenta.</p>
-              <a href="https://riders.uber.com/trips" target="_blank" class="setup-btn">
-                🔗 Abrir Uber Riders
-              </a>
-            </div>
-            <div class="step-status" id="step2Status">
-              <span class="dot orange"></span>
-              <span>Pendiente</span>
-            </div>
-          </div>
-
-          <div class="setup-step" id="step3">
-            <div class="step-number">3</div>
-            <div class="step-content">
-              <h3>Verificá la conexión</h3>
-              <p>Comprobá que la extensión detecta tu sesión de Uber.</p>
-              <button class="setup-btn" id="btnVerify" onclick="verifyConnection()">
-                🔍 Comprobar conexión
-              </button>
-            </div>
-            <div class="step-status" id="step3Status">
-              <span class="dot orange"></span>
-              <span>Pendiente</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Theme toggle inside modal -->
-      <div class="modal-theme-row">
-        <div class="theme-info">
-          <div class="theme-title">Tema de la interfaz</div>
-          <div class="theme-desc">Alternar entre modo claro y oscuro</div>
-        </div>
-        <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">
-          <span id="themeIcon">🌙</span>
-          <span id="themeLabel">Oscuro</span>
+        <!-- Theme toggle -->
+        <button class="btn btn-ghost btn-icon" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Cambiar tema" title="Modo claro/oscuro">
+          <svg id="themeIcon" class="theme-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
         </button>
       </div>
     </div>
-  </div>
+  </header>
 
-  <!-- Error -->
-  <div class="error-box" id="errorBox"></div>
+  <main id="content">
+    <!-- ─── Controls & Filters Panel ─── -->
+    <section class="container" style="padding-top: var(--space-6);" data-od-id="filters-section">
+      <div class="controls-panel" id="controlsPanel">
+        <div class="controls-row-top">
+          <!-- Date Range (Core Flow) -->
+          <div class="date-filter-group">
+            <div class="date-field">
+              <label for="dateFrom">Desde</label>
+              <input type="date" id="dateFrom" onchange="handleDateChange()">
+            </div>
+            <span class="date-separator">→</span>
+            <div class="date-field">
+              <label for="dateTo">Hasta</label>
+              <input type="date" id="dateTo" onchange="handleDateChange()">
+            </div>
+          </div>
 
-  <!-- Loading -->
-  <div class="loading" id="loading">
-    <div class="spinner"></div>
-    <p>Extrayendo viajes desde Uber...</p>
-    <p style="font-size:12px;margin-top:4px;color:var(--mute)">Esto puede tomar unos segundos</p>
-  </div>
+          <!-- Text Search Filter -->
+          <div class="search-input-wrap" style="max-width: 360px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="searchInput" class="search-input" placeholder="Buscar por calle o destino..." oninput="handleSearchInput()">
+          </div>
 
-  <!-- Status / connection check -->
-  <div class="search-bar" id="statusBar" style="padding:12px 20px;display:none">
-    <span id="statusText" style="font-size:13px"></span>
-  </div>
+          <!-- Buscar viajes primary button -->
+          <button class="btn btn-primary" id="btnSearch" onclick="searchTrips()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span>Buscar viajes</span>
+          </button>
+        </div>
 
-  <!-- Dashboard -->
-  <div id="dashboard" class="hidden">
-    <div class="stats" id="statsRow"></div>
+        <div class="controls-row-bottom">
+          <!-- Product Type Chips -->
+          <div class="pill-group" id="productFilterPills">
+            <button class="chip-btn active" data-type="all" onclick="setProductFilter('all')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+              <span>Todos</span>
+            </button>
+            <button class="chip-btn" data-type="Moto" onclick="setProductFilter('Moto')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="5.5" cy="17.5" r="3.5"></circle>
+                <circle cx="18.5" cy="17.5" r="3.5"></circle>
+                <path d="M15 6h-3l-2.5 5.5L7 12"></path>
+                <path d="M9 17.5h6l3-6h-4.5"></path>
+                <path d="M13 6l2-3h2"></path>
+              </svg>
+              <span>Uber Moto</span>
+            </button>
+            <button class="chip-btn" data-type="UberX" onclick="setProductFilter('UberX')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H7.8c-.8 0-1.5.4-1.9 1L3.2 11.2c-.7.6-1.2 1.5-1.2 2.5V16c0 .6.4 1 1 1h2"></path>
+                <circle cx="7" cy="17" r="2"></circle>
+                <path d="M9 17h6"></path>
+                <circle cx="17" cy="17" r="2"></circle>
+              </svg>
+              <span>UberX</span>
+            </button>
+            <button class="chip-btn" data-type="Wait & Save" onclick="setProductFilter('Wait & Save')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>Wait & Save</span>
+            </button>
+            <button class="chip-btn" data-type="CANCELED" onclick="setProductFilter('CANCELED')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+              <span>Cancelados</span>
+            </button>
+          </div>
 
-    <div class="filters" id="clientFilters">
-      <label>Filtrar por tipo:</label>
-      <select id="filterType">
-        <option value="all">Todos</option>
-      </select>
-      <label>Desde:</label>
-      <input type="date" id="filterFrom">
-      <label>Hasta:</label>
-      <input type="date" id="filterTo">
-      <button onclick="applyClientFilters()">Aplicar</button>
-      <button onclick="resetClientFilters()">Limpiar</button>
+          <div style="display: flex; align-items: center; gap: var(--space-3);">
+            <div id="statusBadge"></div>
+            <button class="btn-reset-filters" onclick="resetAllFilters()" title="Restablecer filtros" aria-label="Restablecer filtros">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                <path d="M3 3v5h5"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error box -->
+      <div class="error-box" id="errorBox"></div>
+
+      <!-- Loading spinner -->
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p style="font-weight: 600; color: var(--fg); margin-bottom: 4px;">Extrayendo viajes desde Uber...</p>
+        <p style="font-size: 13px; color: var(--muted);">Esto puede tomar unos segundos</p>
+      </div>
+    </section>
+
+    <!-- ─── Dashboard Section (KPIs, Charts, Table) ─── -->
+    <div id="dashboard" class="hidden">
+      <!-- Barra Horizontal Compacta de Métricas -->
+      <section class="container" style="padding-top: 0;">
+        <div class="metrics-bar" id="metricsBar" data-od-id="metrics-bar">
+          <div class="metrics-bar-item">
+            <div class="metric-top">
+              <span class="metric-label">Total Gastado</span>
+              <span class="metric-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></span>
+            </div>
+            <div class="metric-val" id="kpiTotalSpent">RD$ 0.00</div>
+            <div class="metric-sub" id="kpiCompletedMeta">0 viajes completados</div>
+          </div>
+
+          <div class="metrics-bar-item">
+            <div class="metric-top">
+              <span class="metric-label">Promedio / Viaje</span>
+              <span class="metric-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg></span>
+            </div>
+            <div class="metric-val" id="kpiAvgFare">RD$ 0.00</div>
+            <div class="metric-sub" id="kpiFareRange">-</div>
+          </div>
+
+          <div class="metrics-bar-item">
+            <div class="metric-top">
+              <span class="metric-label">Distancia Total</span>
+              <span class="metric-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg></span>
+            </div>
+            <div class="metric-val" id="kpiTotalDistance">0.0 km</div>
+            <div class="metric-sub" id="kpiCostPerKm">-</div>
+          </div>
+
+          <div class="metrics-bar-item">
+            <div class="metric-top">
+              <span class="metric-label">Tiempo en Tránsito</span>
+              <span class="metric-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
+            </div>
+            <div class="metric-val" id="kpiTotalTime">0h 0m</div>
+            <div class="metric-sub" id="kpiAvgDuration">-</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Visual Analytics & Breakdown -->
+      <section class="container" data-od-id="insights-analytics">
+        <div class="insights-grid">
+          <!-- Main Chart: Expense Over Time / By Category -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <div>
+                <div class="chart-title" id="chartTitle">Evolución de Gasto Diario</div>
+                <p style="font-size: 13px; color: var(--muted);" id="chartSubtitle">Distribución cronológica de gastos</p>
+              </div>
+              <div class="chart-toggle-group">
+                <button class="chart-tab-btn active" id="chartTabDaily" onclick="switchChartMode('daily')">Diario</button>
+                <button class="chart-tab-btn" id="chartTabCategory" onclick="switchChartMode('category')">Por Servicio</button>
+              </div>
+            </div>
+            <div class="chart-canvas-wrapper">
+              <canvas id="mainTrendsChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Category Spend Breakdown -->
+          <div class="chart-card" style="margin-top: var(--space-6);">
+            <div class="chart-header">
+              <div>
+                <div class="chart-title">Desglose por Servicio</div>
+                <p style="font-size: 13px; color: var(--muted);">Distribución de gastos y viajes por categoría</p>
+              </div>
+              <span id="totalCategoriesBadge" style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: var(--radius-sm); background: var(--surface-warm); border: 1px solid var(--border-soft); color: var(--muted);">0 Servicios</span>
+            </div>
+            <div class="category-bars" id="categoryBarsWrap">
+              <!-- Populated via renderBreakdown() -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4: Detailed Trips Table -->
+      <section class="container" data-od-id="trips-records">
+        <div class="trips-section">
+          <div class="trips-header">
+            <div class="trips-title-group">
+              <h2>Registro Detallado de Viajes</h2>
+              <span id="tableSubtitle">Hacé clic en cualquier fila para inspeccionar el itinerario completo</span>
+              <span id="detailCount" style="display:none">0 viajes</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: var(--space-2);">
+              <button class="btn btn-secondary" onclick="exportCSV()" style="font-size: 13px; padding: 8px 14px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Exportar CSV</span>
+              </button>
+              <button class="btn btn-secondary" onclick="exportJSON()" style="font-size: 13px; padding: 8px 14px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Exportar JSON</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="trips-table">
+              <thead>
+                <tr>
+                  <th>Fecha y Hora</th>
+                  <th>Servicio</th>
+                  <th>Trayecto (Origen → Destino)</th>
+                  <th class="col-num">Distancia</th>
+                  <th class="col-num">Duración</th>
+                  <th class="col-num">Tarifa</th>
+                  <th class="col-status">Estado</th>
+                </tr>
+              </thead>
+              <tbody id="tripsTableBody">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+            <div id="tableEmptyState" class="empty-state" style="display: none;">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+              <p style="font-weight: 700; color: var(--fg); margin-bottom: 4px;">No se encontraron viajes con los filtros actuales</p>
+              <p style="font-size: 13px;">Probá ajustando el rango de fechas o limpiando el buscador.</p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
+  </main>
 
-    <div class="charts">
-      <div class="chart-card">
-        <h3>Viajes por tipo</h3>
-        <canvas id="chartType"></canvas>
+  <!-- ─── Trip Detail Modal ─── -->
+  <div class="modal-backdrop" id="tripModalBackdrop" onclick="if(event.target===this)closeTripModal()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <span id="modalTripTypeBadge" class="trip-type-tag moto">Moto</span>
+          <div class="modal-title" id="modalTripFare" style="margin-top: 6px;">RD$ 0.00</div>
+          <div style="font-size: 12px; color: var(--muted);" id="modalTripDate">-</div>
+        </div>
+        <button class="close-btn" onclick="closeTripModal()">✕</button>
       </div>
-      <div class="chart-card">
-        <h3>Gasto por tipo</h3>
-        <canvas id="chartCost"></canvas>
-      </div>
-    </div>
 
-    <div class="breakdown" id="breakdownTable"></div>
+      <!-- Route Visual -->
+      <div class="route-visual-card">
+        <div class="route-point">
+          <div class="point-dot"></div>
+          <div>
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--muted);">Punto de Recogida</div>
+            <div style="font-weight: 600; font-size: 14px;" id="modalPickupText">-</div>
+          </div>
+        </div>
+        <div style="width: 2px; height: 16px; background: var(--border-soft); margin-left: 5px;"></div>
+        <div class="route-point">
+          <div class="point-dot square"></div>
+          <div>
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--muted);">Destino</div>
+            <div style="font-weight: 600; font-size: 14px;" id="modalDropoffText">-</div>
+          </div>
+        </div>
+      </div>
 
-    <div class="detail-section">
-      <div class="header">
-        <h3>Todos los viajes</h3>
-        <span id="detailCount">0 viajes</span>
+      <!-- Quick Metrics -->
+      <div class="detail-grid">
+        <div class="detail-item">
+          <div class="lbl">Distancia</div>
+          <div class="val" id="modalDistVal">-</div>
+        </div>
+        <div class="detail-item">
+          <div class="lbl">Duración estimada</div>
+          <div class="val" id="modalDurVal">-</div>
+        </div>
+        <div class="detail-item">
+          <div class="lbl">Calificación</div>
+          <div class="val" id="modalRatingVal">-</div>
+        </div>
+        <div class="detail-item">
+          <div class="lbl">Estado</div>
+          <div class="val" id="modalStatusVal">-</div>
+        </div>
       </div>
-      <div class="detail-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Tipo</th>
-              <th>Tarifa</th>
-              <th>Distancia</th>
-              <th>Duración</th>
-              <th>Origen</th>
-              <th>Destino</th>
-            </tr>
-          </thead>
-          <tbody id="detailBody"></tbody>
-        </table>
-      </div>
-      <div class="export-bar">
-        <button class="export-btn" onclick="exportCSV()">Exportar CSV</button>
-        <button class="export-btn" onclick="exportJSON()">Exportar JSON</button>
+
+      <div style="display: flex; justify-content: flex-end; gap: var(--space-2);">
+        <button class="btn btn-secondary" onclick="closeTripModal()">Cerrar</button>
       </div>
     </div>
   </div>
-</div>
 
-<script>
-// ---- Settings modal ----
-function openSettingsModal() {
-  const modal = document.getElementById('settingsModal');
-  const wizard = document.getElementById('setupWizard');
-  if (modal) modal.classList.remove('hidden');
-  if (wizard) wizard.classList.remove('hidden');
-}
+  <!-- ─── Sync / Extension Setup Modal ─── -->
+  <div class="modal-backdrop" id="syncModalBackdrop" onclick="if(event.target===this)closeSyncModal()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: var(--space-3);">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--surface-warm); display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-soft);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="modal-title">Configuración de la extensión</div>
+            <div style="font-size: 13px; color: var(--muted);">Instrucciones para sincronizar y extraer tus viajes automáticamente</div>
+          </div>
+        </div>
+        <button class="close-btn" onclick="closeSyncModal()">✕</button>
+      </div>
 
-function closeSettingsModal() {
-  const modal = document.getElementById('settingsModal');
-  const wizard = document.getElementById('setupWizard');
-  if (modal) modal.classList.add('hidden');
-  if (wizard) wizard.classList.add('hidden');
-}
+      <div class="setup-wizard" id="setupWizard" style="display: flex; flex-direction: column; gap: var(--space-4); margin-bottom: var(--space-6);">
+        <div class="setup-step" id="step1" style="background: var(--surface-warm); padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--border-soft);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <div style="font-weight: 700; font-size: 14px;">1. Instalar extensión en el navegador</div>
+            <span id="step1Status" style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--bg); font-weight: 600; border: 1px solid var(--border-soft); display: inline-flex; align-items: center; gap: 4px;">
+              <span class="dot orange"></span><span>Pendiente</span>
+            </span>
+          </div>
+          <p style="font-size: 13px; color: var(--muted); margin-bottom: 10px;">
+            Descargá el archivo de la extensión, descomprimilo y cargalo en <code>chrome://extensions</code> (o <code>brave://extensions</code>) activando el <em>Modo de desarrollador</em>.
+          </p>
+          <a href="uber-trip-extractor.zip" download class="btn btn-secondary" id="btnDownload" style="font-size: 12px; padding: 6px 14px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Descargar uber-trip-extractor.zip
+          </a>
+        </div>
 
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeSettingsModal();
-});
+        <div class="setup-step" id="step2" style="background: var(--surface-warm); padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--border-soft);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <div style="font-weight: 700; font-size: 14px;">2. Iniciar sesión en Uber</div>
+            <span id="step2Status" style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--bg); font-weight: 600; border: 1px solid var(--border-soft); display: inline-flex; align-items: center; gap: 4px;">
+              <span class="dot orange"></span><span>Pendiente</span>
+            </span>
+          </div>
+          <p style="font-size: 13px; color: var(--muted); margin-bottom: 10px;">
+            Abrí una pestaña en <code>riders.uber.com</code> para asegurar que tu sesión oficial esté activa. La extensión lee tus viajes usando esa sesión segura sin almacenar credenciales.
+          </p>
+          <a href="https://riders.uber.com/trips" target="_blank" rel="noopener" class="btn btn-ghost" style="font-size: 12px; padding: 6px 14px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            Abrir riders.uber.com/trips
+          </a>
+        </div>
 
-// Auto-close modal when showReady() hides setupWizard
-const setupWizardEl = document.getElementById('setupWizard');
-if (setupWizardEl) {
-  const modalObserver = new MutationObserver(() => {
-    const modal = document.getElementById('settingsModal');
-    if (modal && setupWizardEl.classList.contains('hidden')) {
-      modal.classList.add('hidden');
+        <div class="setup-step" id="step3" style="background: var(--surface-warm); padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--border-soft);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+            <div style="font-weight: 700; font-size: 14px;">3. Comprobar y sincronizar viajes</div>
+            <span id="step3Status" style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--bg); font-weight: 600; border: 1px solid var(--border-soft); display: inline-flex; align-items: center; gap: 4px;">
+              <span class="dot orange"></span><span>Pendiente</span>
+            </span>
+          </div>
+          <p style="font-size: 13px; color: var(--muted); margin-bottom: 10px;">
+            Hacé clic para comprobar la conexión con la extensión y tu sesión activa en Uber.
+          </p>
+          <button class="btn btn-primary" id="btnVerify" onclick="verifyConnection()" style="font-size: 12px; padding: 6px 14px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            Comprobar conexión
+          </button>
+        </div>
+      </div>
+
+      <!-- Theme toggle row inside modal -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding-top: var(--space-4); border-top: 1px solid var(--border-soft); margin-top: var(--space-2);">
+        <div>
+          <div style="font-weight: 600; font-size: 14px;">Tema de la interfaz</div>
+          <div style="font-size: 12px; color: var(--muted);">Alternar entre modo claro y oscuro</div>
+        </div>
+        <button class="btn btn-secondary" id="themeBtn" onclick="toggleTheme()" style="font-size: 13px; padding: 8px 16px;">
+          <svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <span id="themeLabel">Oscuro</span>
+        </button>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: var(--space-4);">
+        <button class="btn btn-secondary" onclick="closeSyncModal()">Listo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Page Footer ─── -->
+  <footer class="pagefoot" data-od-id="footer">
+    <div class="container pagefoot-inner">
+      <div class="foot-left">
+        <div class="foot-brand-title">Uber Trip Analyzer</div>
+        <div class="foot-desc">
+          Herramienta local y privada para análisis de movilidad personal. Tus datos de sesión nunca salen de tu navegador.
+        </div>
+      </div>
+      <div class="foot-links">
+        <a class="foot-btn" href="https://riders.uber.com/trips" target="_blank" rel="noopener" title="Abrir portal oficial de viajes de Uber">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+          Portal Oficial Uber
+        </a>
+        <a class="foot-btn" href="https://github.com/louysdev" target="_blank" rel="noopener" title="Ver perfil de GitHub de @louysdev">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+          GitHub @louysdev
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ─── Embedded Application Logic & Extension Bridge ─── -->
+  <script>
+    // State
+    let allTrips = [];
+    let filteredTrips = [];
+    let activeProductFilter = 'all';
+    let chartInstance = null;
+    let chartMode = 'daily'; // 'daily' | 'category'
+
+    // Extension bridge state
+    let extensionReady = false;
+    let requestCounter = 0;
+    const pendingRequests = new Map();
+
+    // ---- Settings / Sync Modal ----
+    function openSyncModal() {
+      const modal = document.getElementById('syncModalBackdrop');
+      if (modal) modal.classList.add('open');
     }
-  });
-  modalObserver.observe(setupWizardEl, { attributes: true, attributeFilter: ['class'] });
-}
+    const openSettingsModal = openSyncModal;
 
-// ---- State ----
-let allTrips = [];
-let filteredTrips = [];
-let chartTypeInstance = null;
-let chartCostInstance = null;
-const TYPE_COLORS = { 'Cancelado': '#e74c3c' };
-
-let extensionReady = false;
-let requestCounter = 0;
-const pendingRequests = new Map();
-
-function sendToExtension(command, data = {}) {
-  return new Promise((resolve, reject) => {
-    const id = ++requestCounter;
-    const timeout = setTimeout(() => {
-      pendingRequests.delete(id);
-      reject(new Error('Timeout esperando respuesta de la extensión'));
-    }, 120000); // 2 min timeout for long extractions
-
-    pendingRequests.set(id, { resolve, reject, timeout });
-
-    window.dispatchEvent(new CustomEvent('uber-extractor-request', {
-      detail: { id, command, ...data }
-    }));
-  });
-}
-
-window.addEventListener('uber-extractor-response', (event) => {
-  const { id, ...data } = event.detail;
-  const pending = pendingRequests.get(id);
-  if (pending) {
-    clearTimeout(pending.timeout);
-    pendingRequests.delete(id);
-    pending.resolve(data);
-  }
-});
-
-window.addEventListener('uber-extractor-ready', (event) => {
-  extensionReady = true;
-  // Mark step 1 as completed
-  markStepCompleted(1);
-  // Don't enable search yet — user should verify connection first
-});
-
-function getColor(type) {
-  if (TYPE_COLORS[type]) return TYPE_COLORS[type];
-  const colors = ['#276ef1','#2ecc71','#f39c12','#9b59b6','#e74c3c','#1abc9c','#e67e22','#3498db','#f1c40f','#d35400','#8e44ad'];
-  const idx = Object.keys(TYPE_COLORS).length % colors.length;
-  TYPE_COLORS[type] = colors[idx];
-  return colors[idx];
-}
-
-function fmtDate(d) {
-  if (!d) return '-';
-  const dt = new Date(d);
-  return isNaN(dt.getTime()) ? d : dt.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
-}
-
-function fmtCurrency(n) {
-  const num = parseFloat(n) || 0;
-  return num.toLocaleString('es-DO', { style:'currency', currency:'DOP', minimumFractionDigits:2 });
-}
-
-function fmtDuration(dur) {
-  if (!dur) return '-';
-  const m = dur.match(/(\d+)\s*(min|minutes)/i);
-  if (m) return m[1] + 'min';
-  return dur;
-}
-
-// ---- Connection check ----
-async function checkStatus() {
-  // If extension already detected via bridge, skip wizard check
-  if (extensionReady) {
-    return;
-  }
-  // Give bridge.js time to inject
-  setTimeout(() => {
-    if (!extensionReady) {
-      // Extension not found — wizard stays visible, that's the guidance
+    function closeSyncModal() {
+      const modal = document.getElementById('syncModalBackdrop');
+      if (modal) modal.classList.remove('open');
     }
-  }, 1500);
-}
+    const closeSettingsModal = closeSyncModal;
 
-async function verifyConnection() {
-  const step3Status = document.getElementById('step3Status');
-  step3Status.innerHTML = '<span class="dot orange"></span><span>Verificando...</span>';
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeSyncModal();
+        closeTripModal();
+      }
+    });
 
-  try {
-    const data = await sendToExtension('ping');
-    if (!data.ok) {
-      step3Status.innerHTML = '<span class="dot red"></span><span>Error de conexión</span>';
-      return;
-    }
+    // ---- Extension Bridge ----
+    function sendToExtension(command, data = {}) {
+      return new Promise((resolve, reject) => {
+        const id = ++requestCounter;
+        const timeout = setTimeout(() => {
+          pendingRequests.delete(id);
+          reject(new Error('Timeout esperando respuesta de la extensión'));
+        }, 120000); // 2 min timeout for long extractions
 
-    // Check if Uber tab is open
-    const status = await sendToExtension('get-status');
-    if (status.uberTabOpen) {
-      markStepCompleted(2);
-      markStepCompleted(3);
-      // All steps done — show search bar, hide wizard
-      showReady();
-    } else {
-      // Extension works but no Uber tab
-      markStepCompleted(3); // extension works
-      step3Status.innerHTML = '<span class="dot orange"></span><span>Sin pestaña Uber</span>';
-      showError('Abrí riders.uber.com en otra pestaña e iniciá sesión primero.');
-    }
-  } catch (err) {
-    step3Status.innerHTML = '<span class="dot red"></span><span>Sin extensión</span>';
-    showError('No se pudo conectar con la extensión. Asegurate de haberla instalado.');
-  }
-}
+        pendingRequests.set(id, { resolve, reject, timeout });
 
-function markStepCompleted(stepNum) {
-  const step = document.getElementById('step' + stepNum);
-  const status = document.getElementById('step' + stepNum + 'Status');
-  if (step) step.classList.add('completed');
-  if (status) status.innerHTML = '<span class="dot green"></span><span>Listo ✓</span>';
-}
-
-function showReady() {
-  document.getElementById('setupWizard').classList.add('hidden');
-  document.getElementById('searchBar').classList.remove('hidden');
-  const badge = document.getElementById('statusBadge');
-  badge.innerHTML = '<span class="status-badge ok">Extensión conectada ✓</span>';
-  document.getElementById('btnSearch').disabled = false;
-  hideError();
-}
-
-// ---- Search ----
-async function searchTrips() {
-  const from = document.getElementById('searchFrom').value;
-  const to = document.getElementById('searchTo').value;
-
-  if (!from || !to) {
-    showError('Seleccioná una fecha de inicio y fin');
-    return;
-  }
-
-  if (new Date(from) > new Date(to)) {
-    showError('La fecha "Desde" no puede ser mayor que "Hasta"');
-    return;
-  }
-
-  hideError();
-  document.getElementById('dashboard').classList.add('hidden');
-  document.getElementById('loading').classList.add('show');
-  document.getElementById('btnSearch').disabled = true;
-
-  try {
-    const data = await sendToExtension('fetch-trips', { from, to });
-
-    if (data.error) {
-      showError(data.message || data.error);
-      return;
+        window.dispatchEvent(new CustomEvent('uber-extractor-request', {
+          detail: { id, command, ...data }
+        }));
+      });
     }
 
-    allTrips = data.trips || [];
-    document.getElementById('loading').classList.remove('show');
+    window.addEventListener('uber-extractor-response', (event) => {
+      const { id, ...data } = event.detail;
+      const pending = pendingRequests.get(id);
+      if (pending) {
+        clearTimeout(pending.timeout);
+        pendingRequests.delete(id);
+        pending.resolve(data);
+      }
+    });
 
-    if (allTrips.length === 0) {
-      showError('No se encontraron viajes en ese rango de fechas');
-      return;
+    window.addEventListener('uber-extractor-ready', (event) => {
+      extensionReady = true;
+      markStepCompleted(1);
+    });
+
+    // ---- Status & Connection Check ----
+    async function checkStatus() {
+      if (extensionReady) return;
+      setTimeout(() => {
+        if (!extensionReady) {
+          // Extension not found yet — wizard is ready inside modal
+        }
+      }, 1500);
     }
 
-    initDashboard(from, to);
-  } catch (err) {
-    document.getElementById('loading').classList.remove('show');
-    showError('Error de conexión: ' + err.message);
-  } finally {
-    document.getElementById('btnSearch').disabled = false;
-  }
-}
+    async function verifyConnection() {
+      const step3Status = document.getElementById('step3Status');
+      if (step3Status) {
+        step3Status.innerHTML = '<span class="dot orange"></span><span>Verificando...</span>';
+      }
 
-// ---- Dashboard init ----
-function initDashboard(from, to) {
-  document.getElementById('dashboard').classList.remove('hidden');
+      try {
+        const data = await sendToExtension('ping');
+        if (!data.ok) {
+          if (step3Status) step3Status.innerHTML = '<span class="dot red"></span><span>Error de conexión</span>';
+          return;
+        }
 
-  // Set client filters
-  document.getElementById('filterFrom').value = from;
-  document.getElementById('filterTo').value = to;
-
-  const types = [...new Set(allTrips.map(t => t.product_type || '(sin tipo)'))].sort();
-  const sel = document.getElementById('filterType');
-  sel.innerHTML = '<option value="all">Todos</option>' + types.map(t => `<option value="${t}">${t}</option>`).join('');
-
-  applyClientFilters();
-}
-
-// ---- Client-side filters ----
-function applyClientFilters() {
-  const from = document.getElementById('filterFrom').value;
-  const to = document.getElementById('filterTo').value;
-  const typeFilter = document.getElementById('filterType').value;
-
-  filteredTrips = allTrips.filter(t => {
-    if (typeFilter !== 'all' && t.product_type !== typeFilter) return false;
-    if (from && t.date) {
-      const d = new Date(t.date);
-      if (!isNaN(d.getTime()) && d < new Date(from + 'T00:00:00')) return false;
-    }
-    if (to && t.date) {
-      const d = new Date(t.date);
-      if (!isNaN(d.getTime()) && d > new Date(to + 'T23:59:59')) return false;
-    }
-    return true;
-  });
-
-  render();
-}
-
-function resetClientFilters() {
-  document.getElementById('filterFrom').value = document.getElementById('searchFrom').value;
-  document.getElementById('filterTo').value = document.getElementById('searchTo').value;
-  document.getElementById('filterType').value = 'all';
-  applyClientFilters();
-}
-
-// ---- Render ----
-function render() {
-  renderStats();
-  renderCharts();
-  renderBreakdown();
-  renderDetail();
-}
-
-function renderStats() {
-  const total = filteredTrips.length;
-  const fares = filteredTrips.map(t => t.fare || 0);
-  const totalFare = fares.reduce((a, b) => a + b, 0);
-  const dists = filteredTrips.map(t => t.distance || 0);
-  const totalDist = dists.reduce((a, b) => a + b, 0);
-  const types = new Set(filteredTrips.map(t => t.product_type || '(sin tipo)')).size;
-  const dates = filteredTrips.filter(t => t.date).map(t => new Date(t.date)).filter(d => !isNaN(d.getTime()));
-  const range = dates.length ? `${fmtDate(Math.min(...dates))} — ${fmtDate(Math.max(...dates))}` : '-';
-
-  document.getElementById('statsRow').innerHTML = `
-    <div class="stat-card"><div class="label">Viajes</div><div class="value blue">${total}</div></div>
-    <div class="stat-card"><div class="label">Gasto total</div><div class="value green">${fmtCurrency(totalFare)}</div></div>
-    <div class="stat-card"><div class="label">Distancia total</div><div class="value orange">${totalDist.toFixed(1)} km</div></div>
-    <div class="stat-card"><div class="label">Tipos de viaje</div><div class="value">${types}</div></div>
-    <div class="stat-card"><div class="label">Período</div><div class="value" style="font-size:14px;font-weight:400">${range}</div></div>
-  `;
-}
-
-function renderCharts() {
-  const groups = {};
-  filteredTrips.forEach(t => {
-    const type = t.product_type || '(sin tipo)';
-    if (!groups[type]) groups[type] = { count:0, totalFare:0 };
-    groups[type].count++;
-    groups[type].totalFare += t.fare || 0;
-  });
-
-  const labels = Object.keys(groups);
-  const counts = labels.map(l => groups[l].count);
-  const fares = labels.map(l => groups[l].totalFare);
-  const colors = labels.map(l => getColor(l));
-
-  const ctx1 = document.getElementById('chartType').getContext('2d');
-  if (chartTypeInstance) chartTypeInstance.destroy();
-  const style = getComputedStyle(document.documentElement);
-  const gridColor = style.getPropertyValue('--chart-grid').trim();
-  const textColor = style.getPropertyValue('--chart-text').trim();
-  chartTypeInstance = new Chart(ctx1, {
-    type: 'bar',
-    data: { labels, datasets: [{ data: counts, backgroundColor: colors, borderRadius: 4 }] },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw + ' viajes' } } },
-      scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: textColor }, grid: { color: gridColor } }, x: { ticks: { color: textColor, maxRotation:45 } } }
-    }
-  });
-
-  const ctx2 = document.getElementById('chartCost').getContext('2d');
-  if (chartCostInstance) chartCostInstance.destroy();
-  chartCostInstance = new Chart(ctx2, {
-    type: 'doughnut',
-    data: { labels, datasets: [{ data: fares, backgroundColor: colors, borderWidth: 0 }] },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position:'right', labels: { color: textColor, padding:12, usePointStyle:true, pointStyle:'circle' } },
-        tooltip: { callbacks: { label: ctx => ctx.label + ': ' + fmtCurrency(ctx.raw) } }
+        const status = await sendToExtension('get-status');
+        if (status.uberTabOpen) {
+          markStepCompleted(1);
+          markStepCompleted(2);
+          markStepCompleted(3);
+          showReady();
+        } else {
+          markStepCompleted(1);
+          markStepCompleted(3);
+          if (step3Status) step3Status.innerHTML = '<span class="dot orange"></span><span>Sin pestaña Uber</span>';
+          showError('Abrí riders.uber.com en otra pestaña e iniciá sesión primero.');
+        }
+      } catch (err) {
+        if (step3Status) step3Status.innerHTML = '<span class="dot red"></span><span>Sin extensión</span>';
+        showError('No se pudo conectar con la extensión. Asegurate de haberla instalado.');
       }
     }
-  });
-}
 
-function renderBreakdown() {
-  const groups = {};
-  filteredTrips.forEach(t => {
-    const type = t.product_type || '(sin tipo)';
-    if (!groups[type]) groups[type] = { count:0, totalFare:0, distances:[], durations:[] };
-    groups[type].count++;
-    groups[type].totalFare += t.fare || 0;
-    if (t.distance) groups[type].distances.push(t.distance);
-    if (t.duration) groups[type].durations.push(t.duration);
-  });
-
-  const rows = Object.entries(groups).sort((a, b) => b[1].count - a[1].count);
-  const totalFareAll = filteredTrips.reduce((s, t) => s + (t.fare || 0), 0);
-
-  document.getElementById('breakdownTable').innerHTML = `
-    <div class="breakdown-header">
-      <span>Desglose por tipo</span>
-      <span class="count">${filteredTrips.length} viajes · ${fmtCurrency(totalFareAll)}</span>
-    </div>
-    <table>
-      <thead><tr>
-        <th>Tipo</th><th>Viajes</th><th>%</th><th>Total</th><th>Promedio</th><th>Distancia total</th>
-      </tr></thead>
-      <tbody>
-        ${rows.map(([type, g]) => {
-          const pct = ((g.count / filteredTrips.length) * 100).toFixed(1);
-          const avgFare = g.totalFare / g.count;
-          const totalDist = g.distances.reduce((s, d) => s + d, 0);
-          return `<tr>
-            <td><span class="color-dot" style="background:${getColor(type)}"></span>${type}</td>
-            <td><strong>${g.count}</strong></td>
-            <td>${pct}%</td>
-            <td>${fmtCurrency(g.totalFare)}</td>
-            <td>${fmtCurrency(avgFare)}</td>
-            <td>${totalDist.toFixed(1)} km</td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>
-  `;
-}
-
-function renderDetail() {
-  const sorted = [...filteredTrips].sort((a, b) => {
-    const da = a.date ? new Date(a.date).getTime() : 0;
-    const db = b.date ? new Date(b.date).getTime() : 0;
-    return db - da;
-  });
-
-  const tbody = document.getElementById('detailBody');
-  tbody.innerHTML = sorted.map(t => {
-    const type = t.product_type || '-';
-    const badgeClass = 'badge-' + type.toLowerCase().replace(/[^a-z0-9]/g, '');
-    return `<tr>
-      <td>${fmtDate(t.date)}</td>
-      <td><span class="badge ${badgeClass}">${type}</span></td>
-      <td>${fmtCurrency(t.fare)}</td>
-      <td>${t.distance ? t.distance.toFixed(1) + ' km' : '-'}</td>
-      <td>${fmtDuration(t.duration)}</td>
-      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">${t.pickup || '-'}</td>
-      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">${t.dropoff || '-'}</td>
-    </tr>`;
-  }).join('');
-  document.getElementById('detailCount').textContent = `${sorted.length} viajes`;
-}
-
-// ---- Export ----
-function exportCSV() {
-  if (!filteredTrips.length) return;
-  const rows = filteredTrips.map(t => [
-    t.date || '', t.product_type || '', t.fare || 0, t.distance || 0, t.duration || '',
-    '"' + (t.pickup || '').replace(/"/g, '""') + '"',
-    '"' + (t.dropoff || '').replace(/"/g, '""') + '"',
-    t.status || '',
-  ]);
-  const csv = ['Fecha,Tipo,Tarifa,Distancia_km,Duración,Origen,Destino,Estado', ...rows.map(r => r.join(','))].join('\n');
-  download(csv, 'uber-viajes.csv', 'text/csv');
-}
-
-function exportJSON() {
-  if (!filteredTrips.length) return;
-  const clean = filteredTrips.map(t => ({
-    date: t.date, type: t.product_type, fare: t.fare, distance: t.distance,
-    duration: t.duration, pickup: t.pickup, dropoff: t.dropoff, status: t.status,
-  }));
-  download(JSON.stringify(clean, null, 2), 'uber-viajes.json', 'application/json');
-}
-
-function download(content, filename, mime) {
-  const blob = new Blob([content], { type: mime });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-}
-
-// ---- Error ----
-function showError(msg) {
-  const el = document.getElementById('errorBox');
-  el.textContent = msg;
-  el.classList.add('show');
-}
-function hideError() {
-  document.getElementById('errorBox').classList.remove('show');
-}
-
-// ---- Theme toggle ----
-function toggleTheme() {
-  const html = document.documentElement;
-  const isDark = html.classList.toggle('dark');
-  html.classList.toggle('light', !isDark);
-  const icon = document.getElementById('themeIcon');
-  const label = document.getElementById('themeLabel');
-  if (icon) icon.textContent = isDark ? '☀️' : '🌙';
-  if (label) label.textContent = isDark ? 'Claro' : 'Oscuro';
-  localStorage.setItem('uber-theme', isDark ? 'dark' : 'light');
-  updateChartTheme();
-}
-
-function updateChartTheme() {
-  const style = getComputedStyle(document.documentElement);
-  const gridColor = style.getPropertyValue('--chart-grid').trim();
-  const textColor = style.getPropertyValue('--chart-text').trim();
-
-  if (chartTypeInstance) {
-    chartTypeInstance.options.scales.y.grid.color = gridColor;
-    chartTypeInstance.options.scales.x.ticks.color = textColor;
-    chartTypeInstance.options.scales.y.ticks.color = textColor;
-    chartTypeInstance.update();
-  }
-  if (chartCostInstance) {
-    chartCostInstance.options.plugins.legend.labels.color = textColor;
-    chartCostInstance.update();
-  }
-}
-
-function loadTheme() {
-  const saved = localStorage.getItem('uber-theme');
-  if (saved === 'dark') {
-    document.documentElement.classList.add('dark');
-    document.documentElement.classList.remove('light');
-    const icon = document.getElementById('themeIcon');
-    const label = document.getElementById('themeLabel');
-    if (icon) icon.textContent = '☀️';
-    if (label) label.textContent = 'Claro';
-  } else {
-    document.documentElement.classList.add('light');
-    document.documentElement.classList.remove('dark');
-    const icon = document.getElementById('themeIcon');
-    const label = document.getElementById('themeLabel');
-    if (icon) icon.textContent = '🌙';
-    if (label) label.textContent = 'Oscuro';
-  }
-}
-
-// ---- Init ----
-document.addEventListener('DOMContentLoaded', () => {
-  loadTheme();
-  // Default dates: last 30 days
-  const to = new Date();
-  const from = new Date(to);
-  from.setDate(from.getDate() - 30);
-  document.getElementById('searchFrom').value = from.toISOString().split('T')[0];
-  document.getElementById('searchTo').value = to.toISOString().split('T')[0];
-  document.getElementById('btnSearch').disabled = true;
-  document.getElementById('searchBar').classList.add('hidden');
-
-  // Check connection on load
-  checkStatus();
-
-  // Auto-open settings modal if extension not detected after delay
-  setTimeout(() => {
-    if (!extensionReady) {
-      openSettingsModal();
+    function markStepCompleted(stepNum) {
+      const step = document.getElementById('step' + stepNum);
+      const status = document.getElementById('step' + stepNum + 'Status');
+      if (step) step.classList.add('completed');
+      if (status) {
+        status.innerHTML = '<span class="dot green"></span><span>Listo ✓</span>';
+        status.style.color = 'var(--success)';
+        status.style.borderColor = 'rgba(22, 163, 74, 0.3)';
+      }
     }
-  }, 1500);
-});
-</script>
+
+    function showReady() {
+      const modal = document.getElementById('syncModalBackdrop');
+      if (modal) modal.classList.remove('open');
+
+      const badge = document.getElementById('statusBadge');
+      if (badge) {
+        badge.innerHTML = '<span class="status-badge ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Conectada</span>';
+      }
+
+      const btnSearch = document.getElementById('btnSearch');
+      if (btnSearch) btnSearch.disabled = false;
+
+      hideError();
+    }
+
+    // ---- Date Helpers ----
+    const getFromInput = () => document.getElementById('dateFrom') || document.getElementById('searchFrom');
+    const getToInput = () => document.getElementById('dateTo') || document.getElementById('searchTo');
+
+    function formatTripDateTimeParts(isoDateStr, fallbackLabel) {
+      if (!isoDateStr) {
+        const parts = (fallbackLabel || '').split('•');
+        return {
+          dateStr: (parts[0] || '-').trim(),
+          timeStr: (parts[1] || '').trim()
+        };
+      }
+      try {
+        const d = new Date(isoDateStr);
+        if (isNaN(d.getTime())) {
+          const parts = (fallbackLabel || '').split('•');
+          return {
+            dateStr: (parts[0] || isoDateStr).trim(),
+            timeStr: (parts[1] || '').trim()
+          };
+        }
+
+        const day = d.getDate().toString().padStart(2, '0');
+        const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const month = months[d.getMonth()];
+
+        let hours = d.getHours();
+        const minutes = d.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        const formattedHours = hours.toString().padStart(2, '0');
+
+        return {
+          dateStr: `${day} ${month}`,
+          timeStr: `${formattedHours}:${minutes} ${ampm}`
+        };
+      } catch (e) {
+        return { dateStr: fallbackLabel || isoDateStr || '-', timeStr: '' };
+      }
+    }
+
+    function formatTripDateTime(isoDateStr, fallbackLabel) {
+      const parts = formatTripDateTimeParts(isoDateStr, fallbackLabel);
+      return parts.timeStr ? `${parts.dateStr} • ${parts.timeStr}` : parts.dateStr;
+    }
+
+    function fmtCurrency(n) {
+      const num = parseFloat(n) || 0;
+      return 'RD$ ' + num.toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function fmtDuration(dur) {
+      if (!dur) return '-';
+      if (typeof dur === 'number') return `${dur} min`;
+      const m = String(dur).match(/(\d+)\s*(?:min|minutes|m)/i);
+      if (m) return `${m[1]} min`;
+      return dur;
+    }
+
+    function extractMinutes(dur) {
+      if (!dur) return 0;
+      if (typeof dur === 'number') return dur;
+      const m = String(dur).match(/(\d+)\s*(?:min|minutes|m)/i);
+      return m ? parseInt(m[1], 10) : 0;
+    }
+
+    function getTypeIcon(typeKey) {
+      if (typeKey === 'moto') {
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="5.5" cy="17.5" r="3.5"></circle>
+          <circle cx="18.5" cy="17.5" r="3.5"></circle>
+          <path d="M15 6h-3l-2.5 5.5L7 12"></path>
+          <path d="M9 17.5h6l3-6h-4.5"></path>
+          <path d="M13 6l2-3h2"></path>
+        </svg>`;
+      } else if (typeKey === 'uberx') {
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H7.8c-.8 0-1.5.4-1.9 1L3.2 11.2c-.7.6-1.2 1.5-1.2 2.5V16c0 .6.4 1 1 1h2"></path>
+          <circle cx="7" cy="17" r="2"></circle>
+          <path d="M9 17h6"></path>
+          <circle cx="17" cy="17" r="2"></circle>
+        </svg>`;
+      } else if (typeKey === 'waitsave') {
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>`;
+      } else if (typeKey === 'canceled') {
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>`;
+      }
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>`;
+    }
+
+    // ---- Search Trips ----
+    async function searchTrips() {
+      const fromEl = getFromInput();
+      const toEl = getToInput();
+      const from = fromEl ? fromEl.value : '';
+      const to = toEl ? toEl.value : '';
+
+      if (!from || !to) {
+        showError('Seleccioná una fecha de inicio y fin');
+        return;
+      }
+
+      if (new Date(from) > new Date(to)) {
+        showError('La fecha "Desde" no puede ser mayor que "Hasta"');
+        return;
+      }
+
+      hideError();
+      const dashboard = document.getElementById('dashboard');
+      if (dashboard) dashboard.classList.add('hidden');
+
+      const loading = document.getElementById('loading');
+      if (loading) loading.classList.add('show');
+
+      const btnSearch = document.getElementById('btnSearch');
+      if (btnSearch) btnSearch.disabled = true;
+
+      try {
+        const data = await sendToExtension('fetch-trips', { from, to });
+
+        if (data.error) {
+          showError(data.message || data.error);
+          return;
+        }
+
+        allTrips = data.trips || [];
+        if (loading) loading.classList.remove('show');
+
+        if (allTrips.length === 0) {
+          showError('No se encontraron viajes en ese rango de fechas');
+          return;
+        }
+
+        initDashboard(from, to);
+      } catch (err) {
+        if (loading) loading.classList.remove('show');
+        showError('Error de conexión: ' + err.message);
+      } finally {
+        if (btnSearch) btnSearch.disabled = false;
+      }
+    }
+
+    // ---- Dashboard Init ----
+    function initDashboard(from, to) {
+      const dashboard = document.getElementById('dashboard');
+      if (dashboard) dashboard.classList.remove('hidden');
+
+      applyClientFilters();
+    }
+
+    // ---- Client-side Filtering ----
+    function setProductFilter(type) {
+      activeProductFilter = type;
+      document.querySelectorAll('#productFilterPills .chip-btn').forEach(btn => {
+        if (btn.getAttribute('data-type') === type) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      applyClientFilters();
+    }
+
+    function handleDateChange() {
+      if (extensionReady && allTrips.length > 0) {
+        searchTrips();
+      } else {
+        applyClientFilters();
+      }
+    }
+
+    function handleSearchInput() {
+      applyClientFilters();
+    }
+
+    function handleFilterChange() {
+      applyClientFilters();
+    }
+
+    function resetAllFilters() {
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) searchInput.value = '';
+
+      const to = new Date();
+      const from = new Date(to);
+      from.setDate(from.getDate() - 30);
+      const elFrom = getFromInput();
+      const elTo = getToInput();
+      if (elFrom) elFrom.value = from.toISOString().split('T')[0];
+      if (elTo) elTo.value = to.toISOString().split('T')[0];
+
+      setProductFilter('all');
+    }
+    const resetClientFilters = resetAllFilters;
+
+    function applyClientFilters() {
+      const searchInput = document.getElementById('searchInput');
+      const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+      const fromEl = getFromInput();
+      const toEl = getToInput();
+      const from = fromEl ? fromEl.value : '';
+      const to = toEl ? toEl.value : '';
+
+      filteredTrips = allTrips.filter(t => {
+        const isCanceled = t.status === 'CANCELED' || (t.product_type || '').toUpperCase() === 'CANCELED' || (t.product_type || '').toLowerCase().includes('cancel');
+
+        // 1. Product chip filter
+        if (activeProductFilter === 'CANCELED') {
+          if (!isCanceled) return false;
+        } else if (activeProductFilter !== 'all') {
+          const pType = (t.product_type || '').toLowerCase();
+          const fLow = activeProductFilter.toLowerCase();
+          if (!pType.includes(fLow) && !fLow.includes(pType)) return false;
+        }
+
+        // 2. Date range filter
+        if (from && t.date) {
+          const tripDay = t.date.split('T')[0];
+          if (tripDay && tripDay < from) return false;
+        }
+        if (to && t.date) {
+          const tripDay = t.date.split('T')[0];
+          if (tripDay && tripDay > to) return false;
+        }
+
+        // 3. Search query filter
+        if (query) {
+          const matchPick = (t.pickup || '').toLowerCase().includes(query);
+          const matchDrop = (t.dropoff || '').toLowerCase().includes(query);
+          const matchType = (t.product_type || '').toLowerCase().includes(query);
+          const matchFare = String(t.fare || '').includes(query);
+          if (!matchPick && !matchDrop && !matchType && !matchFare) return false;
+        }
+
+        return true;
+      });
+
+      render();
+    }
+
+    // ---- Render Functions ----
+    function render() {
+      renderStats();
+      renderCharts();
+      renderBreakdown();
+      renderDetail();
+    }
+
+    function renderStats() {
+      let totalSpent = 0;
+      let completedCount = 0;
+      let canceledCount = 0;
+      let totalDist = 0;
+      let totalMins = 0;
+      let completedFares = [];
+
+      filteredTrips.forEach(t => {
+        const isCanceled = t.status === 'CANCELED' || (t.product_type || '').toUpperCase() === 'CANCELED' || (t.product_type || '').toLowerCase().includes('cancel');
+        if (isCanceled) {
+          canceledCount++;
+        } else {
+          const fare = Number(t.fare) || 0;
+          totalSpent += fare;
+          completedCount++;
+          completedFares.push(fare);
+          totalDist += parseFloat(t.distance) || 0;
+          totalMins += extractMinutes(t.duration);
+        }
+      });
+
+      const avgFare = completedCount > 0 ? (totalSpent / completedCount) : 0;
+      const hours = Math.floor(totalMins / 60);
+      const remainingMins = totalMins % 60;
+
+      const spentEl = document.getElementById('kpiTotalSpent');
+      if (spentEl) spentEl.textContent = fmtCurrency(totalSpent);
+
+      const avgEl = document.getElementById('kpiAvgFare');
+      if (avgEl) avgEl.textContent = fmtCurrency(avgFare);
+
+      const distEl = document.getElementById('kpiTotalDistance');
+      if (distEl) distEl.textContent = totalDist.toFixed(1) + ' km';
+
+      const timeEl = document.getElementById('kpiTotalTime');
+      if (timeEl) timeEl.textContent = `${hours}h ${remainingMins}m`;
+
+      const completedMetaEl = document.getElementById('kpiCompletedMeta');
+      if (completedMetaEl) {
+        completedMetaEl.textContent = `${completedCount} viajes completados${canceledCount > 0 ? ' · ' + canceledCount + ' cancelados' : ''}`;
+      }
+
+      const fareRangeEl = document.getElementById('kpiFareRange');
+      if (fareRangeEl) {
+        if (completedFares.length > 0) {
+          const minFare = Math.min(...completedFares);
+          const maxFare = Math.max(...completedFares);
+          fareRangeEl.textContent = `${fmtCurrency(minFare)} – ${fmtCurrency(maxFare)}`;
+        } else {
+          fareRangeEl.textContent = '-';
+        }
+      }
+
+      const costKmEl = document.getElementById('kpiCostPerKm');
+      if (costKmEl) {
+        costKmEl.textContent = totalDist > 0 ? `${fmtCurrency(totalSpent / totalDist)} / km` : '-';
+      }
+
+      const avgDurEl = document.getElementById('kpiAvgDuration');
+      if (avgDurEl) {
+        avgDurEl.textContent = completedCount > 0 ? `~${Math.round(totalMins / completedCount)} min por viaje` : '-';
+      }
+    }
+
+    function switchChartMode(mode) {
+      chartMode = mode;
+      const tabDaily = document.getElementById('chartTabDaily');
+      const tabCat = document.getElementById('chartTabCategory');
+      if (tabDaily) tabDaily.classList.toggle('active', mode === 'daily');
+      if (tabCat) tabCat.classList.toggle('active', mode === 'category');
+
+      const chartTitle = document.getElementById('chartTitle');
+      const chartSubtitle = document.getElementById('chartSubtitle');
+      if (chartTitle) {
+        chartTitle.textContent = mode === 'daily' ? 'Evolución de Gasto Diario' : 'Gasto por Tipo de Servicio';
+      }
+      if (chartSubtitle) {
+        chartSubtitle.textContent = mode === 'daily' ? 'Distribución cronológica de gastos' : 'Distribución acumulada por tipo de servicio';
+      }
+
+      renderCharts();
+    }
+
+    function renderCharts() {
+      const canvas = document.getElementById('mainTrendsChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const isDark = document.body.getAttribute('data-theme') === 'dark';
+      const textColor = isDark ? '#ffffff' : '#000000';
+      const mutedColor = isDark ? '#a3a3a3' : '#737373';
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+
+      if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+      }
+
+      if (chartMode === 'daily') {
+        const daysMap = {};
+        filteredTrips.forEach(t => {
+          const isCanceled = t.status === 'CANCELED' || (t.product_type || '').toUpperCase() === 'CANCELED' || (t.product_type || '').toLowerCase().includes('cancel');
+          if (!isCanceled && t.date) {
+            const day = t.date.split('T')[0];
+            if (day) {
+              daysMap[day] = (daysMap[day] || 0) + (Number(t.fare) || 0);
+            }
+          }
+        });
+
+        const sortedDays = Object.keys(daysMap).sort();
+        const labels = sortedDays.map(d => {
+          const parts = d.split('-');
+          return parts.length >= 3 ? `${parts[2]}/${parts[1]}` : d;
+        });
+        const dataValues = sortedDays.map(d => daysMap[d]);
+
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels.length > 0 ? labels : ['Sin datos'],
+            datasets: [{
+              label: 'Gasto Diario',
+              data: dataValues.length > 0 ? dataValues : [0],
+              borderColor: textColor,
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+              borderWidth: 2,
+              pointBackgroundColor: textColor,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              fill: true,
+              tension: 0.25
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: isDark ? '#262626' : '#000000',
+                titleColor: '#ffffff',
+                bodyColor: '#ffffff',
+                padding: 12,
+                cornerRadius: 8,
+                callbacks: {
+                  label: function(c) {
+                    return fmtCurrency(c.parsed.y);
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: gridColor },
+                ticks: { color: mutedColor, font: { family: 'UberMoveText, Inter, sans-serif' } }
+              },
+              y: {
+                beginAtZero: true,
+                grid: { color: gridColor },
+                ticks: {
+                  color: mutedColor,
+                  font: { family: 'UberMoveText, Inter, sans-serif' },
+                  callback: val => 'RD$ ' + Number(val).toLocaleString('es-DO')
+                }
+              }
+            }
+          }
+        });
+      } else {
+        const catMap = {};
+        filteredTrips.forEach(t => {
+          const isCanceled = t.status === 'CANCELED' || (t.product_type || '').toUpperCase() === 'CANCELED' || (t.product_type || '').toLowerCase().includes('cancel');
+          if (!isCanceled) {
+            const cat = t.product_type || 'Otros';
+            catMap[cat] = (catMap[cat] || 0) + (Number(t.fare) || 0);
+          }
+        });
+
+        const labels = Object.keys(catMap);
+        const dataValues = Object.values(catMap);
+
+        chartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels.length > 0 ? labels : ['Sin datos'],
+            datasets: [{
+              data: dataValues.length > 0 ? dataValues : [0],
+              backgroundColor: isDark ? ['#ffffff', '#a3a3a3', '#525252', '#38bdf8', '#c084fc'] : ['#000000', '#4b4b4b', '#9ca3af', '#0284c7', '#9333ea'],
+              borderRadius: 8,
+              barThickness: 36
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: isDark ? '#262626' : '#000000',
+                titleColor: '#ffffff',
+                bodyColor: '#ffffff',
+                padding: 12,
+                cornerRadius: 8,
+                callbacks: {
+                  label: c => fmtCurrency(c.parsed.y)
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { color: mutedColor }
+              },
+              y: {
+                beginAtZero: true,
+                grid: { color: gridColor },
+                ticks: {
+                  color: mutedColor,
+                  callback: val => 'RD$ ' + Number(val).toLocaleString('es-DO')
+                }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    function renderBreakdown() {
+      const counts = {};
+      const tripCounts = {};
+      let totalSpent = 0;
+
+      filteredTrips.forEach(t => {
+        const isCanceled = t.status === 'CANCELED' || (t.product_type || '').toUpperCase() === 'CANCELED' || (t.product_type || '').toLowerCase().includes('cancel');
+        if (!isCanceled) {
+          const type = t.product_type || 'Otros';
+          const fare = Number(t.fare) || 0;
+          counts[type] = (counts[type] || 0) + fare;
+          tripCounts[type] = (tripCounts[type] || 0) + 1;
+          totalSpent += fare;
+        }
+      });
+
+      const catEntries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      const categoriesBadge = document.getElementById('totalCategoriesBadge');
+      if (categoriesBadge) {
+        categoriesBadge.textContent = `${catEntries.length} ${catEntries.length === 1 ? 'Servicio' : 'Servicios'}`;
+      }
+
+      const wrap = document.getElementById('categoryBarsWrap');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+
+      if (catEntries.length === 0) {
+        wrap.innerHTML = '<div style="font-size: 13px; color: var(--muted); text-align: center; padding: var(--space-4);">No hay gastos registrados en este período.</div>';
+        return;
+      }
+
+      catEntries.forEach(([cat, sum]) => {
+        const pct = totalSpent > 0 ? ((sum / totalSpent) * 100).toFixed(1) : '0.0';
+        const tripCount = tripCounts[cat] || 0;
+
+        let typeKey = 'other';
+        const catLower = cat.toLowerCase();
+        if (catLower.includes('moto')) typeKey = 'moto';
+        else if (catLower.includes('uberx')) typeKey = 'uberx';
+        else if (catLower.includes('wait') || catLower.includes('save') || catLower.includes('espera')) typeKey = 'waitsave';
+
+        const item = document.createElement('div');
+        item.className = 'cat-bar-item';
+        item.innerHTML = `
+          <div class="cat-bar-top-row">
+            <div class="cat-bar-identity">
+              <span class="cat-type-icon-badge ${typeKey}">
+                ${getTypeIcon(typeKey)}
+              </span>
+              <span class="cat-count-circle ${typeKey}" title="${tripCount} ${tripCount === 1 ? 'viaje' : 'viajes'}">
+                ${tripCount}
+              </span>
+              <span class="cat-bar-name">${cat}</span>
+            </div>
+            <span class="cat-bar-amount">${fmtCurrency(sum)}</span>
+          </div>
+          <div class="cat-bar-bottom-row">
+            <div class="cat-bar-track">
+              <div class="cat-bar-fill ${typeKey}" style="width: ${pct}%;"></div>
+            </div>
+          </div>
+        `;
+        wrap.appendChild(item);
+      });
+    }
+
+    function renderDetail() {
+      const tbody = document.getElementById('tripsTableBody');
+      const emptyState = document.getElementById('tableEmptyState');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (filteredTrips.length === 0) {
+        if (emptyState) emptyState.style.display = 'block';
+        const sub = document.getElementById('tableSubtitle');
+        if (sub) sub.textContent = '0 viajes encontrados';
+        const countEl = document.getElementById('detailCount');
+        if (countEl) countEl.textContent = '0 viajes';
+        return;
+      }
+      if (emptyState) emptyState.style.display = 'none';
+
+      const sorted = [...filteredTrips].sort((a, b) => {
+        const da = a.date ? new Date(a.date).getTime() : 0;
+        const db = b.date ? new Date(b.date).getTime() : 0;
+        return db - da;
+      });
+
+      const sub = document.getElementById('tableSubtitle');
+      if (sub) sub.textContent = `${sorted.length} viajes encontrados · Hacé clic en cualquier fila para inspeccionar el itinerario completo`;
+
+      const countEl = document.getElementById('detailCount');
+      if (countEl) countEl.textContent = `${sorted.length} viajes`;
+
+      sorted.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.onclick = () => openTripModal(t);
+
+        const isCanceled = t.status === 'CANCELED' || (t.product_type || '').toUpperCase() === 'CANCELED' || (t.product_type || '').toLowerCase().includes('cancel');
+
+        let typeKey = 'other';
+        const pType = (t.product_type || '').toLowerCase();
+        if (isCanceled) typeKey = 'canceled';
+        else if (pType.includes('moto')) typeKey = 'moto';
+        else if (pType.includes('uberx')) typeKey = 'uberx';
+        else if (pType.includes('wait') || pType.includes('save') || pType.includes('espera')) typeKey = 'waitsave';
+
+        const dateParts = formatTripDateTimeParts(t.date, t.dateLabel);
+        const distNum = parseFloat(t.distance);
+        const distDisplay = isCanceled ? '-' : (!isNaN(distNum) && distNum > 0 ? `${distNum.toFixed(1)} km` : '-');
+        const durDisplay = isCanceled ? '-' : (fmtDuration(t.duration) || '-');
+        const fareDisplay = isCanceled ? 'RD$ 0.00' : fmtCurrency(t.fare);
+
+        tr.innerHTML = `
+          <td>
+            <div class="date-cell-wrap">
+              <span class="date-part">${dateParts.dateStr}</span>
+              <span class="date-dot">•</span>
+              <span class="time-part">${dateParts.timeStr}</span>
+            </div>
+          </td>
+          <td>
+            <div class="type-cell-wrap">
+              <span class="trip-type-tag ${typeKey}">
+                ${getTypeIcon(typeKey)}
+                ${isCanceled ? 'Cancelado' : (t.product_type || 'Uber')}
+              </span>
+            </div>
+          </td>
+          <td class="route-cell">
+            <div class="route-pickup" title="${t.pickup || '-'}">
+              <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--fg);margin-right:4px;flex-shrink:0;"></span>
+              ${t.pickup || '-'}
+            </div>
+            <div class="route-dropoff" title="${t.dropoff || (isCanceled ? 'Cancelado antes del viaje' : '-')}">
+              <span style="display:inline-block;width:6px;height:6px;border-radius:1px;background:var(--muted);margin-right:4px;flex-shrink:0;"></span>
+              ${t.dropoff || (isCanceled ? 'Cancelado antes del viaje' : '-')}
+            </div>
+          </td>
+          <td class="col-num" style="font-family: var(--font-mono); font-size: 13px;">
+            ${distDisplay}
+          </td>
+          <td class="col-num" style="font-size: 13px;">
+            ${durDisplay}
+          </td>
+          <td class="fare-cell col-num" style="color: ${isCanceled ? 'var(--meta)' : 'var(--fg)'}">
+            ${fareDisplay}
+          </td>
+          <td class="col-status">
+            <span class="status-pill ${isCanceled ? 'canceled' : 'completed'}" title="${isCanceled ? 'Cancelado' : 'Completado'}" aria-label="${isCanceled ? 'Cancelado' : 'Completado'}">
+              ${isCanceled 
+                ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+                : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+              }
+            </span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ---- Trip Detail Modal ----
+    function openTripModal(trip) {
+      const isCanceled = trip.status === 'CANCELED' || (trip.product_type || '').toUpperCase() === 'CANCELED' || (trip.product_type || '').toLowerCase().includes('cancel');
+
+      let typeKey = 'other';
+      const pType = (trip.product_type || '').toLowerCase();
+      if (isCanceled) typeKey = 'canceled';
+      else if (pType.includes('moto')) typeKey = 'moto';
+      else if (pType.includes('uberx')) typeKey = 'uberx';
+      else if (pType.includes('wait') || pType.includes('save') || pType.includes('espera')) typeKey = 'waitsave';
+
+      const badgeEl = document.getElementById('modalTripTypeBadge');
+      if (badgeEl) {
+        badgeEl.innerHTML = `${getTypeIcon(typeKey)} ${isCanceled ? 'Cancelado' : (trip.product_type || 'Uber')}`;
+        badgeEl.className = 'trip-type-tag ' + typeKey;
+      }
+
+      const fareEl = document.getElementById('modalTripFare');
+      if (fareEl) fareEl.textContent = isCanceled ? 'RD$ 0.00' : fmtCurrency(trip.fare);
+
+      const dateEl = document.getElementById('modalTripDate');
+      if (dateEl) {
+        const formatted = formatTripDateTime(trip.date, trip.dateLabel);
+        dateEl.textContent = trip.id ? `${formatted} (ID: ${trip.id.substring(0, 8)}...)` : formatted;
+      }
+
+      const pickEl = document.getElementById('modalPickupText');
+      if (pickEl) pickEl.textContent = trip.pickup || '-';
+
+      const dropEl = document.getElementById('modalDropoffText');
+      if (dropEl) dropEl.textContent = trip.dropoff || (isCanceled ? 'Viaje cancelado antes de iniciar recorrido' : '-');
+
+      const distEl = document.getElementById('modalDistVal');
+      if (distEl) {
+        const distNum = parseFloat(trip.distance);
+        distEl.textContent = isCanceled ? '0 km' : (!isNaN(distNum) && distNum > 0 ? `${distNum.toFixed(1)} km` : '-');
+      }
+
+      const durEl = document.getElementById('modalDurVal');
+      if (durEl) durEl.textContent = isCanceled ? '-' : (fmtDuration(trip.duration) || '-');
+
+      const ratingEl = document.getElementById('modalRatingVal');
+      if (ratingEl) ratingEl.textContent = trip.rating ? `★ ${trip.rating}` : 'Sin calificación';
+
+      const statusEl = document.getElementById('modalStatusVal');
+      if (statusEl) statusEl.textContent = isCanceled ? 'Cancelado' : 'Completado con éxito';
+
+      const modal = document.getElementById('tripModalBackdrop');
+      if (modal) modal.classList.add('open');
+    }
+
+    function closeTripModal() {
+      const modal = document.getElementById('tripModalBackdrop');
+      if (modal) modal.classList.remove('open');
+    }
+
+    // ---- Export CSV / JSON ----
+    function exportCSV() {
+      if (!filteredTrips.length) return;
+      const headers = ['Fecha', 'Servicio', 'Tarifa (DOP)', 'Distancia (km)', 'Duración', 'Origen', 'Destino', 'Estado'];
+      const rows = filteredTrips.map(t => [
+        t.date || '',
+        t.product_type || '',
+        t.fare || 0,
+        t.distance || 0,
+        `"${(t.duration || '').replace(/"/g, '""')}"`,
+        `"${(t.pickup || '').replace(/"/g, '""')}"`,
+        `"${(t.dropoff || '').replace(/"/g, '""')}"`,
+        t.status || ''
+      ]);
+      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      download(csv, 'uber-viajes.csv', 'text/csv');
+    }
+
+    function exportJSON() {
+      if (!filteredTrips.length) return;
+      const clean = filteredTrips.map(t => ({
+        id: t.id,
+        date: t.date,
+        product_type: t.product_type,
+        fare: t.fare,
+        distance: t.distance,
+        duration: t.duration,
+        pickup: t.pickup,
+        dropoff: t.dropoff,
+        status: t.status,
+        rating: t.rating
+      }));
+      download(JSON.stringify(clean, null, 2), 'uber-viajes.json', 'application/json');
+    }
+
+    function download(content, filename, mime) {
+      const blob = new Blob([content], { type: mime });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // ---- Error Box Helpers ----
+    function showError(msg) {
+      const el = document.getElementById('errorBox');
+      if (el) {
+        el.textContent = msg;
+        el.classList.add('show');
+      }
+    }
+
+    function hideError() {
+      const el = document.getElementById('errorBox');
+      if (el) {
+        el.textContent = '';
+        el.classList.remove('show');
+      }
+    }
+
+    // ---- Theme Management ----
+    function toggleTheme() {
+      const current = document.body.getAttribute('data-theme') || 'light';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.body.setAttribute('data-theme', next);
+      localStorage.setItem('uber-theme', next);
+      updateThemeIcons(next);
+      renderCharts();
+    }
+
+    function updateThemeIcons(theme) {
+      const isDark = theme === 'dark';
+      const themeIcons = document.querySelectorAll('.theme-icon-svg');
+      themeIcons.forEach(icon => {
+        if (isDark) {
+          icon.innerHTML = `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
+        } else {
+          icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+        }
+      });
+      const themeLabel = document.getElementById('themeLabel');
+      if (themeLabel) themeLabel.textContent = isDark ? 'Claro' : 'Oscuro';
+    }
+
+    function loadTheme() {
+      const saved = localStorage.getItem('uber-theme') || 'light';
+      document.body.setAttribute('data-theme', saved);
+      updateThemeIcons(saved);
+    }
+
+    // ---- App Initialization ----
+    document.addEventListener('DOMContentLoaded', () => {
+      loadTheme();
+
+      // Default dates: last 30 days
+      const to = new Date();
+      const from = new Date(to);
+      from.setDate(from.getDate() - 30);
+      const fromStr = from.toISOString().split('T')[0];
+      const toStr = to.toISOString().split('T')[0];
+
+      const elFrom = getFromInput();
+      const elTo = getToInput();
+      if (elFrom) elFrom.value = fromStr;
+      if (elTo) elTo.value = toStr;
+
+      const btnSearch = document.getElementById('btnSearch');
+      if (btnSearch) btnSearch.disabled = true;
+
+      // Check extension connection
+      checkStatus();
+
+      // Auto-open setup modal if extension not detected after 1.5s
+      setTimeout(() => {
+        if (!extensionReady) {
+          openSyncModal();
+        }
+      }, 1500);
+    });
+  </script>
 </body>
 </html>
